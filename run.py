@@ -1,4 +1,6 @@
-from model import SWB_model
+from DyNSimF import model_func, run_model
+ITERATIONS = 100
+RUNS = 10
 
-starter_model = SWB_model(10)
-starter_model.step()
+model = model_func()
+run_model(model, ITERATIONS)
