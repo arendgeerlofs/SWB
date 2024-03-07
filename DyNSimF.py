@@ -34,10 +34,9 @@ def model_func():
     model.add_update(update_expectations, {"model": model})
     model.add_update(event, {"model": model},
                             condition = update_conditions["Event"], get_nodes=True) 
-    # model.add_network_update(update_network, get_nodes=True)
+    model.add_network_update(update_network, {"model":model}, get_nodes=True)
 
-
-    return model
+    return model, Network
 
 def run_model(model, iterations, verbose=True):
     # Simulate model
@@ -55,3 +54,5 @@ def run_model(model, iterations, verbose=True):
     plt.savefig("figures/test")
     plt.plot(expectation_scores)
     plt.savefig("figures/test2")
+
+    return output

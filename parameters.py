@@ -10,7 +10,7 @@ network_parameters = {
 
 constants = {
     # Population size
-    'N' : 100,
+    'N' : 5,
     # Likert scale low and high
     "L_low" : 0,
     "L_high" : 10,
