@@ -28,23 +28,16 @@ def model_func():
         "fin_expected" : model.get_state("financial"),
     }
     model.set_states(list(init_states.keys()) + list(exp_states.keys()))
-
-    
+    model.set_initial_state(init_states, init_params)
     # Update rules
-    model.add_update(update_SWB, {"SWB":model.get_state("SWB"), 
-                                "fin":model.get_state("financial"),
-                                "fin_exp":model.get_state("fin_expected")},
-                                condition = update_conditions["SWB"])
-    # model.add_update(update_expectations, {"hab": model.get_state("habituation"),
-    #                                        "fin": model.get_state("financial"),
-    #                                        "fin_exp": model.get_state("fin_expected")})
-    model.add_update(event, {"fin":model.get_state("financial"),
-                            "event_size":model.constants['event_size']},
-                            condition = update_conditions["Event"])
-    model.add_network_update(update_network, get_nodes=True)
+    model.add_update(update_SWB, {"model":model})
+    model.add_update(update_expectations, {"model": model})
+    model.add_update(event, {"model": model},
+                            condition = update_conditions["Event"], get_nodes=True) 
+    # model.add_network_update(update_network, get_nodes=True)
+
 
     return model
-
 
 def run_model(model, iterations, verbose=True):
     # Simulate model
@@ -54,9 +47,11 @@ def run_model(model, iterations, verbose=True):
     # Data visualisation and analysis
 
     # Print SWB scores over time of person 0
-    SWB_scores = [[output["states"][a][0][0]] for a in output["states"]]
-
+    SWB_scores = [[output["states"][a][0][9]] for a in output["states"]]
+    expectation_scores = [[output["states"][a][0][11]] for a in output["states"]]
     # Plot SWB scores over time
     # TODO change to averages
     plt.plot(SWB_scores)
     plt.savefig("figures/test")
+    plt.plot(expectation_scores)
+    plt.savefig("figures/test2")
