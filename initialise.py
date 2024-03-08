@@ -10,7 +10,7 @@ def init_network(size=100, net_type="Rd", p=0.5, m=5):
         return nx.erdos_renyi_graph(size, p)
     elif net_type == "Pref":
         # TODO add social distance attachment model
-        return 
+        return
     else:
         print("Invalid network structure name")
         print("Options are 'BA', 'Rd' and 'Pref'")
@@ -55,8 +55,11 @@ init_states = {
     'financial': initial_Likert,
     'religion': initial_Likert,
 
+    # External property
+    'Evironment': initial_Likert,
+
     # Expected values
-    # 'fin_expected': initial_expected_fin,
+    'fin_expected': initial_Likert,
     # 'rel_expected': initial_expected_rel,
 }
 
