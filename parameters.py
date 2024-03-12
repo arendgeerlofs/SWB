@@ -3,7 +3,7 @@ File containing all the parameter values and constants
 """
 network_parameters = {
     # Network parameters
-    "type" : "BA",
+    "type" : "Rd",
     'm' : 1,
     'p' : 0.1,
     'segregation': 0.3,
@@ -18,7 +18,8 @@ constants = {
     # Max value for SWB
     "SWB_high" : 10,
     # Event size
+    "event_prob": 0.02,
     "event_size" : 5,
     # Parameter indicating change of model during simulations
-    "upd_net" : False
+    "upd_net" : True
 }

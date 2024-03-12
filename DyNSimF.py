@@ -3,7 +3,7 @@ from dynsimf.models.Model import Model
 
 from initialise import init_states, init_network
 from parameters import constants, network_parameters
-from update import update_conditions, update_SWB, update_expectations, update_network, event
+from update import update_conditions, update_SWB, update_SWB2, update_network, event
 
 
 def init_model():
@@ -22,14 +22,13 @@ def init_model():
     }
     model.set_initial_state(init_states, init_params)
 
-
     # Update rules
-    model.add_update(update_SWB, {"model":model})
-    model.add_update(update_expectations, {"model": model})
+    model.add_update(update_SWB2, {"model":model})
+    # model.add_update(update_expectations, {"model": model})
     model.add_update(event, {"model": model},
                             condition = update_conditions["Event"], get_nodes=True) 
     if model.constants["upd_net"]:
-        model.add_network_update(update_network, {"model":model}, get_nodes=True)
+        model.add_network_update(update_network, {"model":model}, get_nodes=True, condition = update_conditions["Network"])
 
     return model
 
@@ -44,9 +43,10 @@ def run_model(model, iterations, verbose=True):
     SWB_scores = [[output["states"][a][0][0]] for a in output["states"]]
     fin_scores = [[output["states"][a][0][9]] for a in output["states"]]
     expectation_scores = [[output["states"][a][0][12]] for a in output["states"]]
-    print(SWB_scores)
+
     # Plot SWB scores over time
     # TODO change to averages
+    # print(SWB_scores)
     plt.plot(fin_scores)
     plt.savefig("figures/test")
     plt.plot(expectation_scores)

@@ -59,7 +59,7 @@ init_states = {
     'Evironment': initial_Likert,
 
     # Expected values
-    'fin_expected': initial_Likert,
+    'RFC_expected': initial_Likert,
     # 'rel_expected': initial_expected_rel,
 }
 
