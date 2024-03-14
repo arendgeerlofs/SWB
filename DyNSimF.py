@@ -9,7 +9,7 @@ import numpy as np
 from initialise import init_states, init_network
 from parameters import constants, network_parameters
 from functions import get_nodes
-from update import update_conditions, update_SWB, update_network, event, initial_update
+from update import update_conditions, update_states, update_network, event, initial_network_update, initial_RFC_update
 
 
 def init_model():
@@ -27,24 +27,33 @@ def init_model():
         'constants': model.constants
     }
     model.set_initial_state(init_states, init_params)
+    
+    # Set SDA connections if network type is SDA
+    if network_parameters["type"] == "SDA":
+        initial_network_cfg = UpdateConfiguration({
+            'arguments': {"model": model},
+            'get_nodes': False,
+            'update_type': UpdateType.NETWORK
+            })
+        int_net = Update(initial_network_update, initial_network_cfg) # Create an Update object that contains the object function
+        model.add_scheme(Scheme(get_nodes, {'args': {'graph': model.graph}, 'lower_bound': 0, 'upper_bound': 1, 'updates': [int_net]}))
 
-    # Initial update
-    initial_update_cfg = UpdateConfiguration({
-    'arguments': {"model": model},
-    'get_nodes': False,
-    'update_type': UpdateType.STATE
-    })
-    int_u = Update(initial_update, initial_update_cfg) # Create an Update object that contains the object function
-    model.add_scheme(Scheme(get_nodes, {'args': {'graph': model.graph}, 'lower_bound': 0, 'upper_bound': 1, 'updates': [int_u]}))
-
+    # Set expectations equal to actual value at the start of the simulation
+    initial_RFC_cfg = UpdateConfiguration({
+        'arguments': {"model": model},
+        'get_nodes': False,
+        'update_type': UpdateType.STATE
+        })
+    int_RFC = Update(initial_RFC_update, initial_RFC_cfg) # Create an Update object that contains the object function
+    model.add_scheme(Scheme(get_nodes, {'args': {'graph': model.graph}, 'lower_bound': 0, 'upper_bound': 1, 'updates': [int_RFC]}))
 
     # Update rules
-    model.add_update(update_SWB, {"model":model})
+    model.add_update(update_states, {"model":model})
     # model.add_update(update_expectations, {"model": model})
     model.add_update(event, {"model": model},
-                            condition = update_conditions["Event"], get_nodes=True) 
+                           condition = update_conditions["Event"], get_nodes=True) 
     if model.constants["upd_net"]:
-        model.add_network_update(update_network, {"model":model}, get_nodes=True, condition = update_conditions["Network"])
+       model.add_network_update(update_network, {"model":model}, get_nodes=True, condition = update_conditions["Network"])
 
     return model
 
@@ -52,13 +61,12 @@ def run_model(model, iterations, verbose=True):
     # Simulate model
     output = model.simulate(iterations)
 
-
     return output
 
 def visualise(model, output): 
     visualization_config = {
         'layout': 'fr',
-        'plot_interval': 1,
+        'plot_interval': 5,
         'plot_variable': 'SWB',
         'variable_limits': {
             'SWB': [0, 10],
@@ -77,15 +85,21 @@ def plot(output):
     # Print SWB scores over time of person 0
     SWB_scores = [[output["states"][a][0][0]] for a in output["states"]]
 
-    fin_scores = [[output["states"][a][0][9]] for a in output["states"]]
-    expectation_scores = [[output["states"][a][0][12]] for a in output["states"]]
+    fin_scores = [[output["states"][a][0][10]] for a in output["states"]]
+    expectation_scores = [[output["states"][a][0][13]] for a in output["states"]]
+    RFC = [[output["states"][a][0][14]] for a in output["states"]]
 
     # Plot SWB scores over time
     # TODO change to averages
     # print(SWB_scores)
-    plt.plot(SWB_scores)
+    plt.plot(SWB_scores[2:])
     plt.savefig("figures/SWB")
     plt.clf()   # Clear figure
-    plt.plot(fin_scores)
-    plt.plot(expectation_scores)
+    plt.plot(fin_scores[2:])
+    plt.plot(expectation_scores[2:])
     plt.savefig("figures/fin")
+    plt.clf()
+    plt.plot(RFC[2:])
+    plt.plot(expectation_scores[2:])
+    plt.savefig("figures/RFC")
+

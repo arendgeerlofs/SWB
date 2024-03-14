@@ -37,7 +37,8 @@ def initial_expected_rel(constants):
 
 init_states = {
     # The goal
-    'SWB': initial_SWB, 
+    'SWB': initial_SWB,
+    "SWB_norm" : initial_SWB,
 
     # Adaptation properties
     'habituation': initial_Likert,
@@ -60,6 +61,7 @@ init_states = {
 
     # Expected values
     'RFC_expected': initial_Likert,
+    'RFC': initial_Likert,
     # 'rel_expected': initial_expected_rel,
 }
 

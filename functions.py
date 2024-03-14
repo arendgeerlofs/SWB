@@ -15,7 +15,7 @@ def calc_RFC(model):
         R_i = (I - I_min)/(I_max-I_min)
         F_i = rankdata(fin[social_circle])[-1]/len(social_circle)
         RFC_cur[node] = w * R_i + (1-w)*F_i
-    return RFC_cur
+    return 10* RFC_cur
 
 def get_nodes(graph):
     return graph.nodes
