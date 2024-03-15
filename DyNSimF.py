@@ -14,14 +14,13 @@ from update import update_conditions, update_states, update_network, event, init
 
 def init_model():
     # Create network
-    network = init_network(constants["N"], network_parameters["type"],
+    network = init_network(network_parameters["N"], network_parameters["type"],
                            network_parameters["p"], network_parameters["m"])
 
     # Model configuration
     model = Model(network) # Initialize a model object
     model.constants = constants # Set the constants
     model.set_states(list(init_states.keys())) # Add the states to the model
-
     # Initialization parameters
     init_params = {
         'constants': model.constants
@@ -62,44 +61,3 @@ def run_model(model, iterations, verbose=True):
     output = model.simulate(iterations)
 
     return output
-
-def visualise(model, output): 
-    visualization_config = {
-        'layout': 'fr',
-        'plot_interval': 5,
-        'plot_variable': 'SWB',
-        'variable_limits': {
-            'SWB': [0, 10],
-        },
-        'color_scale': 'RdBu',
-        'show_plot': True,
-        'plot_output': 'animations/SWB.gif',
-        'plot_title': 'SWB',
-    }
-
-    model.configure_visualization(visualization_config, output)
-    model.visualize('animation')
-
-def plot(output):
-    # Plot data
-    # Print SWB scores over time of person 0
-    SWB_scores = [[output["states"][a][0][0]] for a in output["states"]]
-
-    fin_scores = [[output["states"][a][0][10]] for a in output["states"]]
-    expectation_scores = [[output["states"][a][0][13]] for a in output["states"]]
-    RFC = [[output["states"][a][0][14]] for a in output["states"]]
-
-    # Plot SWB scores over time
-    # TODO change to averages
-    # print(SWB_scores)
-    plt.plot(SWB_scores[2:])
-    plt.savefig("figures/SWB")
-    plt.clf()   # Clear figure
-    plt.plot(fin_scores[2:])
-    plt.plot(expectation_scores[2:])
-    plt.savefig("figures/fin")
-    plt.clf()
-    plt.plot(RFC[2:])
-    plt.plot(expectation_scores[2:])
-    plt.savefig("figures/RFC")
-
