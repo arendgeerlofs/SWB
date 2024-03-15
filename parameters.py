@@ -4,6 +4,7 @@ File containing all the parameter values and constants
 network_parameters = {
     # Network parameters
     "type" : "Rd",
+    'N' : 1000,
     'm' : 1,
     'p' : 0.1,
     'segregation': 0.9,
@@ -11,7 +12,7 @@ network_parameters = {
 
 constants = {
     # Population size
-    'N' : 1000,
+    'N' : network_parameters["N"],
     # Likert scale low and high
     "L_low" : 0,
     "L_high" : 10,

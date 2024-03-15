@@ -81,7 +81,7 @@ def update_states(model):
     # Change SWB based on Range-Frequency
     # TODO diminishing returns function over expectation and income
     SWB_change = ((SWB - 10) * np.exp(-0.2*RFC_delta) + (10 - SWB))
-    param_chgs["SWB"] = SWB_norm + SWB_change
+    param_chgs["SWB"] = np.clip(SWB_norm + SWB_change, 0, 10)
 
     # Change expectations
     # TODO habituation/sensitization
