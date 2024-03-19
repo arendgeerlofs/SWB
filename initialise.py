@@ -42,26 +42,27 @@ init_states = {
 
     # Adaptation properties
     'habituation': initial_Likert,
-    'sensitisation': initial_Likert,
-    'desensitisation': initial_Likert,
+    # 'sensitisation': initial_Likert,
+    # 'desensitisation': initial_Likert,
 
-    # Personality traits
-    'extraversion': initial_Likert,
-    'neuroticism': initial_Likert,
-    'openness': initial_Likert,
-    'conscientiesness': initial_Likert,
-    'agreeableness': initial_Likert,
+    # # Personality traits
+    # 'extraversion': initial_Likert,
+    # 'neuroticism': initial_Likert,
+    # 'openness': initial_Likert,
+    # 'conscientiesness': initial_Likert,
+    # 'agreeableness': initial_Likert,
 
     # Individual properties
     'financial': initial_Likert,
-    'religion': initial_Likert,
+    'financial_exp': initial_Likert,
+    # 'religion': initial_Likert,
 
     # External property
-    'Evironment': initial_Likert,
+    # 'Evironment': initial_Likert,
 
     # Expected values
-    'RFC_expected': initial_Likert,
     'RFC': initial_Likert,
+    'RFC_expected': initial_Likert,
     # 'rel_expected': initial_expected_rel,
 }
 

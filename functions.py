@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import rankdata
+from parameters import network_parameters
 
 def calc_RFC(model):
     N = model.constants["N"]
@@ -12,6 +13,8 @@ def calc_RFC(model):
         social_circle = np.append(neighbors, node)
         I_min = np.min(fin[social_circle])
         I_max = np.max(fin[social_circle])
+        if I_min == I_max:
+            return 5
         R_i = (I - I_min)/(I_max-I_min)
         F_i = rankdata(fin[social_circle])[-1]/len(social_circle)
         RFC_cur[node] = w * R_i + (1-w)*F_i
@@ -57,3 +60,10 @@ def bisection(f, exp_con, N, dist, alpha, b_min, b_max, tol):
         # case where m is an improvement on b. 
         # Make recursive call with b = m
         return bisection(f, exp_con, N, dist, alpha, b_min, m, tol)
+    
+def extract_data(output, state_number):
+    data = np.zeros((len(output["states"]), network_parameters["N"]))
+    for timestep in output["states"]:
+        for person, _ in enumerate(output["states"][timestep]):
+            data[timestep][person] = output["states"][timestep][person][state_number]
+    return data

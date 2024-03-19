@@ -1,18 +1,10 @@
 """
 File containing all the parameter values and constants
 """
-network_parameters = {
-    # Network parameters
-    "type" : "Rd",
-    'N' : 1000,
-    'm' : 1,
-    'p' : 0.1,
-    'segregation': 0.9,
-    }
 
 constants = {
     # Population size
-    'N' : network_parameters["N"],
+    'N' : 100,
     # Likert scale low and high
     "L_low" : 0,
     "L_high" : 10,
@@ -22,5 +14,16 @@ constants = {
     "event_prob": 0.02,
     "event_size" : 1,
     # Parameter indicating change of model during simulations
-    "upd_net" : False
+    "upd_net" : False,
+    # Intervention size
+    "intervention_size" : 0.1,
 }
+
+network_parameters = {
+    # Network parameters
+    "type" : "Rd",
+    'N' : constants["N"],
+    'm' : 1,
+    'p' : 0.1,
+    'segregation': 0.9,
+    }

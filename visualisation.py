@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.animation as animation
 import timeit
 from parameters import network_parameters
+from functions import extract_data
 
 def visualise(model, output): 
     visualization_config = {
@@ -25,15 +26,18 @@ def plot(output):
     # Plot data
     # Print SWB scores over time of person 0
     SWB_scores = [[output["states"][a][0][0]] for a in output["states"]]
+    SWB_norm = [[output["states"][a][0][1]] for a in output["states"]]
 
-    fin_scores = [[output["states"][a][0][10]] for a in output["states"]]
-    expectation_scores = [[output["states"][a][0][13]] for a in output["states"]]
-    RFC = [[output["states"][a][0][14]] for a in output["states"]]
+    fin_scores = [[output["states"][a][0][3]] for a in output["states"]]
+    expectation_scores = [[output["states"][a][0][4]] for a in output["states"]]
+    RFC = [[output["states"][a][0][5]] for a in output["states"]]
+    RFC_exp = [[output["states"][a][0][6]] for a in output["states"]]
 
     # Plot SWB scores over time
     # TODO change to averages
     # print(SWB_scores)
     plt.plot(SWB_scores[2:])
+    plt.plot(SWB_norm[2:])
     plt.savefig("figures/SWB")
     plt.clf()   # Clear figure
     plt.plot(fin_scores[2:])
@@ -41,15 +45,8 @@ def plot(output):
     plt.savefig("figures/fin")
     plt.clf()
     plt.plot(RFC[2:])
-    plt.plot(expectation_scores[2:])
+    plt.plot(RFC_exp[2:])
     plt.savefig("figures/RFC")
-
-def extract_data(output, state_number):
-    data = np.zeros((len(output["states"])+1, network_parameters["N"]))
-    for timestep in output["states"]:
-        for person, _ in enumerate(output["states"][timestep]):
-            data[timestep][person] = output["states"][timestep][person][state_number]
-    return data
 
 def SWB_gif(output, iterations, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
     # Get SWB data
@@ -67,8 +64,8 @@ def gif(data, frames, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim
 
 def update_hist(num, data, xlabel, ylabel, xlim):
     plt.cla()
-    plt.hist(data[num])
+    plt.hist(data[num], range=xlim)
     plt.title(f"Iteration: {num}")
-    plt.xlim(xlim)
+    # plt.xlim(xlim)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
