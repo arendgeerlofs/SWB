@@ -25,39 +25,41 @@ def visualise(model, output):
 def plot(output):
     # Plot data
     # Print SWB scores over time of person 0
-    SWB_scores = [[output["states"][a][0][0]] for a in output["states"]]
-    SWB_norm = [[output["states"][a][0][1]] for a in output["states"]]
+    SWB_scores = [[output["states"][a][0][1]] for a in output["states"]]
+    SWB_exp = [[output["states"][a][0][2]] for a in output["states"]]
+    SWB_norm = [[output["states"][a][0][0]] for a in output["states"]]
 
-    fin_scores = [[output["states"][a][0][3]] for a in output["states"]]
-    expectation_scores = [[output["states"][a][0][4]] for a in output["states"]]
-    RFC = [[output["states"][a][0][5]] for a in output["states"]]
-    RFC_exp = [[output["states"][a][0][6]] for a in output["states"]]
+    fin_scores = [[output["states"][a][0][5]] for a in output["states"]]
+    expectation_scores = [[output["states"][a][0][6]] for a in output["states"]]
+    RFC = [[output["states"][a][0][7]] for a in output["states"]]
+    RFC_exp = [[output["states"][a][0][8]] for a in output["states"]]
 
     # Plot SWB scores over time
     # TODO change to averages
     # print(SWB_scores)
-    plt.plot(SWB_scores[2:])
-    plt.plot(SWB_norm[2:])
+    plt.plot(SWB_scores)
+    plt.plot(SWB_exp)
+    plt.plot(SWB_norm, 'g')
     plt.savefig("figures/SWB")
     plt.clf()   # Clear figure
-    plt.plot(fin_scores[2:])
-    plt.plot(expectation_scores[2:])
+    plt.plot(fin_scores)
+    plt.plot(expectation_scores)
     plt.savefig("figures/fin")
     plt.clf()
-    plt.plot(RFC[2:])
-    plt.plot(RFC_exp[2:])
+    plt.plot(RFC)
+    plt.plot(RFC_exp)
     plt.savefig("figures/RFC")
 
 def SWB_gif(output, iterations, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
     # Get SWB data
-    data = extract_data(output, 0)
+    data = extract_data(output, 1)
     gif(data, iterations, fps, name=name, xlabel=xlabel, ylabel=ylabel, xlim=xlim)
 
 def gif(data, frames, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
     number_of_frames = 100
 
     fig = plt.figure()
-    hist = plt.hist(data[0])
+    hist = plt.hist(data[1])
     writergif = animation.PillowWriter(fps=fps)
     anim = animation.FuncAnimation(fig, update_hist, frames, fargs=(data, xlabel, ylabel, xlim) )
     anim.save(f'animations/{name}.gif',writer=writergif)

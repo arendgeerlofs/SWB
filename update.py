@@ -1,16 +1,16 @@
 import numpy as np
 from dynsimf.models.components.conditions.Condition import ConditionType
 from dynsimf.models.components.conditions.StochasticCondition import StochasticCondition
-from dynsimf.models.components.conditions.CustomCondition import CustomCondition
 from parameters import constants
 from functions import calc_RFC, bisection, SDA_prob, SDA_root
 from parameters import network_parameters
+import scipy.ndimage as ndimage
 
 # Update conditions
 update_conditions = {
     "SWB" : StochasticCondition(ConditionType.STATE, 1),
     "Event" : StochasticCondition(ConditionType.STATE, constants["event_prob"]),
-    "Network" : StochasticCondition(ConditionType.STATE, 0.25)
+    "Network" : StochasticCondition(ConditionType.STATE, 0.25),
 }
 
 # Initial updates to the model
@@ -52,22 +52,17 @@ def initial_network_update(model):
     
     return {'edge_change': network_update}
 
-def initial_exp_update(model):
-    """
-    Function to set expected RFC to current RFC since this cannot be done during initialisation
-    """
-    return {"RFC_expected": calc_RFC(model), "financial_exp": model.get_state("financial")}
-
 def update_states(model):
     """
     Function that updates the states each iteration
     Changes expectatations and SWB and saves current RFC
     """
     # Load states
-    hab, RFC_exp = model.get_state("habituation"), model.get_state("RFC_expected")
+    hab = model.get_state("habituation")
     SWB, SWB_norm = model.get_state("SWB"), model.get_state("SWB_norm")
-    fin, fin_exp = model.get_state("financial"), model.get_state("financial_exp")
-    
+    fin = model.get_state("financial")
+    fin_hist, RFC_hist, SWB_hist = model.fin_hist, model.RFC_hist, model.SWB_hist
+    N = model.constants['N']
 
     # Dict to save param changes to
     param_chgs = {}
@@ -78,24 +73,38 @@ def update_states(model):
     # Save current RFC
     param_chgs["RFC"] = RFC_cur
 
+    # Calculate expectations based on history and smoothing
+    fin_exp = np.array([ndimage.gaussian_filter(fin_hist[i], hab[i], )[-1] for i in range(N)])
+    RFC_exp = np.array([ndimage.gaussian_filter(RFC_hist[i], hab[i], )[-1] for i in range(N)])
+    SWB_exp = np.array([ndimage.gaussian_filter(SWB_hist[i], hab[i], )[-1] for i in range(N)])
+
     # Calculate difference between expected and actual values
-    RFC_delta = RFC_cur-RFC_exp
-    fin_delta = fin - fin_exp
+    RFC_rel = RFC_cur / RFC_exp
+    fin_rel = fin / fin_exp
 
-    # Change SWB based on Range-Frequency
-    # TODO diminishing returns function over expectation and income
-    RFC_SWB_change = ((SWB - 10) * np.exp(-0.2*RFC_delta) + (10 - SWB))
-    fin_SWB_change = fin_delta
-    param_chgs["SWB"] = np.clip(SWB_norm + RFC_SWB_change + fin_SWB_change, 0, 10)
+    # Change SWB based on Range-Frequency and financial stock
+    # SWB change based on system dynamics paper
+    # Divided by 2 since 2 factors now instead of 1
+    RFC_SWB_change = 0.5 * ((1/0.691347) * np.log(RFC_rel+1)-1)
+    fin_SWB_change = 0.5 * ((1/0.691347) * np.log(fin_rel+1)-1)
+    param_chgs["SWB"] = np.clip(SWB_norm + 0.5 * (RFC_SWB_change + fin_SWB_change), 0, 10)
 
-    # Change expectations
-    # TODO habituation/sensitization
-    rate_of_change = hab / 10
-    exp_change = RFC_delta * rate_of_change
-    param_chgs["RFC_expected"] = RFC_exp + exp_change
+    # Save expectations
+    param_chgs["fin_exp"] = fin_exp
+    param_chgs["RFC_exp"] = RFC_exp
+    param_chgs["SWB_exp"] = SWB_exp
 
-    # Change financial expectations
-    param_chgs["financial_exp"] = fin_exp + (fin_delta) * rate_of_change
+    # Calculate change on financial based on SWB change with expectations
+    SWB_delta = SWB - SWB_exp
+    param_chgs["financial"] = np.maximum(fin + 0.1 * SWB_delta, 1)
+
+    # Calculate and save community SWB
+    param_chgs["SWB_comm"] = np.array([np.mean(SWB[np.append(model.get_neighbors(node), model.get_neighbors_neighbors(node))]) for node in model.nodes])
+
+    # Change history
+    model.fin_hist = np.append(fin_hist[:, 1:], fin.reshape(N, 1), axis=1)
+    model.RFC_hist = np.append(RFC_hist[:, 1:], RFC_cur.reshape(N, 1), axis=1)
+    model.SWB_hist = np.append(SWB_hist[:, 1:], SWB.reshape(N, 1), axis=1)
 
     return param_chgs
 
@@ -125,7 +134,16 @@ def event(nodes, model):
     # Calculate event
     change = np.random.normal(0, event_size)
 
-    return {"financial": fin[nodes] + change}
+    return {"financial": np.maximum(fin[nodes] + change, 1)}
+
+def pulse(model_input, model):
+    """
+    Returns all nodes if intervention takes place
+    """
+    cur_it = len(model.simulation_output["states"])
+    if cur_it % model.constants["intervention_gap"] == 0:
+        return model_input[0]
+    return np.array([])
 
 def intervention(model):
     fin = model.get_state("financial")

@@ -11,12 +11,15 @@ constants = {
     # Max value for SWB
     "SWB_high" : 10,
     # Event size
-    "event_prob": 0.02,
+    "event_prob": 0.05,
     "event_size" : 1,
     # Parameter indicating change of model during simulations
     "upd_net" : False,
     # Intervention size
-    "intervention_size" : 0.1,
+    "intervention_size" : 1,
+    "intervention_gap" : 10,
+    # History length
+    "hist_len" : 10
 }
 
 network_parameters = {

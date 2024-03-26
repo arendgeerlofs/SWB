@@ -64,6 +64,5 @@ def bisection(f, exp_con, N, dist, alpha, b_min, b_max, tol):
 def extract_data(output, state_number):
     data = np.zeros((len(output["states"]), network_parameters["N"]))
     for timestep in output["states"]:
-        for person, _ in enumerate(output["states"][timestep]):
-            data[timestep][person] = output["states"][timestep][person][state_number]
+        data[timestep] = output["states"][timestep][:, state_number]
     return data
