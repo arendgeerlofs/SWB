@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.stats import rankdata
-from parameters import network_parameters
 
 def calc_RFC(model):
     N = model.constants["N"]
@@ -10,14 +9,15 @@ def calc_RFC(model):
     for node in model.nodes:
         I = fin[node]
         neighbors = model.get_neighbors(node)
-        social_circle = np.append(neighbors, node)
+        social_circle = np.append(neighbors, node).astype(int)
         I_min = np.min(fin[social_circle])
         I_max = np.max(fin[social_circle])
         if I_min == I_max:
-            return 5
-        R_i = (I - I_min)/(I_max-I_min)
-        F_i = rankdata(fin[social_circle])[-1]/len(social_circle)
-        RFC_cur[node] = w * R_i + (1-w)*F_i
+            RFC_cur[node] = 5
+        else:
+            R_i = (I - I_min)/(I_max-I_min)
+            F_i = rankdata(fin[social_circle])[-1]/len(social_circle)
+            RFC_cur[node] = w * R_i + (1-w)*F_i
     return 10* RFC_cur
 
 def get_nodes(graph):
@@ -61,8 +61,8 @@ def bisection(f, exp_con, N, dist, alpha, b_min, b_max, tol):
         # Make recursive call with b = m
         return bisection(f, exp_con, N, dist, alpha, b_min, m, tol)
     
-def extract_data(output, state_number):
-    data = np.zeros((len(output["states"]), network_parameters["N"]))
+def extract_data(N, output, state_number):
+    data = np.zeros((len(output["states"]), N))
     for timestep in output["states"]:
         data[timestep] = output["states"][timestep][:, state_number]
     return data

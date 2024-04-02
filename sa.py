@@ -23,11 +23,12 @@ def GSA(constants, its, samples, parameters=[], bounds=[[]]):
     
     data = np.empty(len(param_values))
     for index, params in tqdm(enumerate(param_values)):
+        print(params)
         for param_ind, param in enumerate(params):
             constants[parameters[param_ind]] = param
         model = init_model(constants)
-        output = model.simulate(its)
-        SWB = extract_data(output, 1)
+        output = model.simulate(its, show_tqdm=False)
+        SWB = extract_data(constants["N"], output, 1)
         data[index] = np.mean(SWB[-1])
     
     # Perform analysis
@@ -35,6 +36,8 @@ def GSA(constants, its, samples, parameters=[], bounds=[[]]):
 
     # Print the first-order sensitivity indices
     print(Si['S1'])
+
+    return Si
 
 def LSA(constants, its, samples, parameters=[], bounds=[[]]):
     """"
@@ -47,7 +50,7 @@ def LSA(constants, its, samples, parameters=[], bounds=[[]]):
             constants[param] = value
             model = init_model(constants)
             output = model.simulate(its)
-            SWB = extract_data(output, 1)
+            SWB = extract_data(constants["N"], output, 1)
             data[index][i] = np.mean(SWB[-1])
 
     return data

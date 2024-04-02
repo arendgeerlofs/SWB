@@ -23,6 +23,11 @@ def initial_SWB(model):
     "Set initial SWB equal to norm"
     return model.get_state("SWB_norm")
 
+def initial_hab(model):
+    "Set initial habituation, lower numbers mean faster habituation"
+    return np.random.uniform(0, model.constants["hist_len"], model.constants['N'])
+
+
 def initial_Likert(model):
     "Randomly initialise Likert-type properties using uniform distribution"
     return np.random.uniform(model.constants["L_low"], model.constants["L_high"], model.constants['N'])
@@ -69,7 +74,7 @@ init_states = {
     "SWB_comm" : initial_SWB_comm,
 
     # Adaptation properties
-    'habituation': initial_Likert,
+    'habituation': initial_hab,
     # 'sensitisation': initial_Likert,
     # 'desensitisation': initial_Likert,
 

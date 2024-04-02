@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.animation as animation
 import timeit
-from parameters import network_parameters
 from functions import extract_data
 
 def visualise(model, output): 
@@ -50,9 +49,9 @@ def plot(output):
     plt.plot(RFC_exp)
     plt.savefig("figures/RFC")
 
-def SWB_gif(output, iterations, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
+def SWB_gif(model, output, iterations, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
     # Get SWB data
-    data = extract_data(output, 1)
+    data = extract_data(model.constants["N"], output, 1)
     gif(data, iterations, fps, name=name, xlabel=xlabel, ylabel=ylabel, xlim=xlim)
 
 def gif(data, frames, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):

@@ -6,15 +6,14 @@ from dynsimf.models.components.Update import UpdateConfiguration
 from dynsimf.models.components.conditions.CustomCondition import CustomCondition
 
 from initialise import init_states, init_network, initial_fin_hist, initial_RFC_hist, initial_SWB_hist
-from parameters import network_parameters
 from functions import get_nodes
 from update import update_conditions, update_states, update_network, event, initial_network_update, intervention, pulse
 
 
 def init_model(constants):
     # Create network
-    network = init_network(network_parameters["N"], network_parameters["type"],
-                           network_parameters["p"], network_parameters["m"])
+    network = init_network(constants["N"], constants["type"],
+                           constants["p"], constants["m"])
 
     # Model configuration
     model = Model(network) # Initialize a model object
@@ -31,7 +30,7 @@ def init_model(constants):
     model.SWB_hist = initial_SWB_hist(model)
 
     # Set SDA connections if network type is SDA
-    if network_parameters["type"] == "SDA":
+    if model.constants["type"] == "SDA":
         initial_network_cfg = UpdateConfiguration({
             'arguments': {"model": model},
             'get_nodes': False,

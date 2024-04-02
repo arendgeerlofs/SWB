@@ -3,14 +3,14 @@ from dynsimf.models.components.conditions.Condition import ConditionType
 from dynsimf.models.components.conditions.StochasticCondition import StochasticCondition
 from parameters import constants
 from functions import calc_RFC, bisection, SDA_prob, SDA_root
-from parameters import network_parameters
 import scipy.ndimage as ndimage
+from scipy.stats import rankdata
 
 # Update conditions
 update_conditions = {
     "SWB" : StochasticCondition(ConditionType.STATE, 1),
     "Event" : StochasticCondition(ConditionType.STATE, constants["event_prob"]),
-    "Network" : StochasticCondition(ConditionType.STATE, 0.25),
+    "Network" : StochasticCondition(ConditionType.STATE, 0.2),
 }
 
 # Initial updates to the model
@@ -26,9 +26,9 @@ def initial_network_update(model):
     """
     # Get N, expected connections, alpha and financial status
     N = model.constants["N"]
-    exp_con = N * network_parameters["p"]
+    exp_con = N * model.constants["p"]
     fin = model.get_state("financial").reshape(N, 1)
-    alpha = network_parameters["segregation"]
+    alpha = model.constants["segregation"]
 
     # Calculate euclidean distance between nodes based on financial status
     dist = np.abs(fin - fin.T)
@@ -74,6 +74,8 @@ def update_states(model):
     param_chgs["RFC"] = RFC_cur
 
     # Calculate expectations based on history and smoothing
+    # TODO 1 for loop instead of 3
+    # Axis argument gaussian filter
     fin_exp = np.array([ndimage.gaussian_filter(fin_hist[i], hab[i], )[-1] for i in range(N)])
     RFC_exp = np.array([ndimage.gaussian_filter(RFC_hist[i], hab[i], )[-1] for i in range(N)])
     SWB_exp = np.array([ndimage.gaussian_filter(SWB_hist[i], hab[i], )[-1] for i in range(N)])
@@ -99,7 +101,7 @@ def update_states(model):
     param_chgs["financial"] = np.maximum(fin + 0.1 * SWB_delta, 1)
 
     # Calculate and save community SWB
-    param_chgs["SWB_comm"] = np.array([np.mean(SWB[np.append(model.get_neighbors(node), model.get_neighbors_neighbors(node))]) for node in model.nodes])
+    param_chgs["SWB_comm"] = np.array([np.mean(SWB[np.append(model.get_neighbors(node), model.get_neighbors_neighbors(node)).astype(int)]) for node in model.nodes])
 
     # Change history
     model.fin_hist = np.append(fin_hist[:, 1:], fin.reshape(N, 1), axis=1)
