@@ -8,16 +8,17 @@ def init_network(size=100, net_type="Rd", p=0.5, m=5):
         return nx.barabasi_albert_graph(size, m)
     elif net_type == "Rd":
         return nx.erdos_renyi_graph(size, p)
-    elif net_type == "Pref":
-        # TODO add social distance attachment model
-        return
+    elif net_type == "SDA":
+        g = nx.Graph()
+        g.add_nodes_from([i for i in range(100)])
+        return g
     else:
         print("Invalid network structure name")
-        print("Options are 'BA', 'Rd' and 'Pref'")
+        print("Options are 'BA', 'Rd' and 'SDA'")
 
 def initial_SWB_norm(model):
     "Randomly initialise SWB using the normal distribution"
-    return np.clip(np.random.normal(7, 2, model.constants['N']), 0, 10)
+    return np.clip(np.random.normal(model.constants["SWB_mu"], model.constants["SWB_sd"], model.constants['N']), 0, 10)
 
 def initial_SWB(model):
     "Set initial SWB equal to norm"
@@ -32,32 +33,32 @@ def initial_Likert(model):
     "Randomly initialise Likert-type properties using uniform distribution"
     return np.random.uniform(model.constants["L_low"], model.constants["L_high"], model.constants['N'])
 
-# TODO find way to remove variable constants from these functions
 def initial_expected_fin(model):
     "Initialise expected values based on actual initial value"
-    # return np.random.uniform(model.constants["L_low"], model.constants["L_high"], model.constants['N'])
     return model.get_state("financial")
 
 def initial_RFC(model):
+    "Set initial RFC to actual RFC based on the initial financial statuses and social connections"
     return calc_RFC(model)
 
 def initial_expected_SWB(model):
     "Initialise expected values based on actual initial value"
-    # return np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
     return model.get_state("SWB")
 
 def initial_expected_RFC(model):
     "Initialise expected values based on actual initial value"
-    # return np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
     return model.get_state("RFC")
 
 def initial_fin_hist(model):
+    "Initialise history of financial stock equal to current stock for history length of time steps"
     return model.get_state("financial").reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
 
 def initial_RFC_hist(model):
+    "Initialise history of RFC stock equal to current stock for history length of time steps"
     return model.get_state("RFC").reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
 
 def initial_SWB_hist(model):
+    "Initialise history of SWB equal to current stock for history length of time steps"
     return model.get_state("SWB").reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
 
 def initial_SWB_comm(model):

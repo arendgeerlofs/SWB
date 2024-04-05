@@ -18,8 +18,8 @@ RUNS = 10
 #         ylabel="Amount", xlim=(0, 10), ylim=[0, 10])
 # visualise(model, output)
 
-params = ["event_prob", "event_size", "intervention_size", "intervention_gap"]
-bounds = [(0, 0.5), (0, 10), (0, 5), (1, 12)]
-sa = GSA(constants, ITERATIONS, 512, params, bounds)
+params = ["event_prob", "event_size", "intervention_size", "intervention_gap", "hist_len", "SWB_mu", "SWB_sd", "soc_w"]
+bounds = [(0, 0.5), (0, 10), (0, 5), (1, 12), (1, 10), (0, 10), (0, 5), (0, 1)]
+sa = GSA(constants, ITERATIONS, 256, params, bounds, sa_type="Pawn")
 print("---------------")
 print(sa)

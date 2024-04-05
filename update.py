@@ -4,13 +4,13 @@ from dynsimf.models.components.conditions.StochasticCondition import StochasticC
 from parameters import constants
 from functions import calc_RFC, bisection, SDA_prob, SDA_root
 import scipy.ndimage as ndimage
-from scipy.stats import rankdata
+from sklearn.preprocessing import normalize
 
 # Update conditions
 update_conditions = {
     "SWB" : StochasticCondition(ConditionType.STATE, 1),
     "Event" : StochasticCondition(ConditionType.STATE, constants["event_prob"]),
-    "Network" : StochasticCondition(ConditionType.STATE, 0.2),
+    "Network" : StochasticCondition(ConditionType.STATE, 0.01),
 }
 
 # Initial updates to the model
@@ -37,6 +37,7 @@ def initial_network_update(model):
     beta_min = 0.1
     beta_max = 10
     beta = bisection(SDA_root, exp_con, N, dist, alpha, beta_min, beta_max, 0.01)
+    model.beta = beta
 
     # Calculate connection probabilities
     probs = SDA_prob(dist, alpha, beta)
@@ -114,15 +115,30 @@ def update_network(nodes, model):
     """
     Function which changes the network by removing and adding connections
     """
-    # TODO adjacency graphs
+    alpha = model.constants["segregation"]
+    beta = model.beta
+    N = model.constants["N"]
+    fin = model.get_state("financial").reshape(N, 1)
+
+    dist = np.abs(fin - fin.T)
+    probs = SDA_prob(dist, alpha, beta)
+    matrix_size = np.shape(probs)
+    # Get probability to be removed for neighbors, normalized to 1
+    remove_probs = normalize(model.get_adjacency() * (1-probs), axis=1, norm='l1')
+    remove_matrix = np.random.binomial(size=matrix_size, n=1, p=remove_probs)
+
+    # Get probability to be added for non-neighbors, normalized to 1
+    add_probs = normalize((1-model.get_adjacency()) * probs, axis=1, norm='l1')
+    add_matrix = np.random.binomial(size=matrix_size, n=1, p=add_probs)
+
     network_update = {}
     for node in nodes:
-        if node == 1:
-            network_update[node] = {"remove": [], "add": []}
-            neighbors = model.get_neighbors(node)
-            other_nodes = np.delete(np.arange(model.constants["N"]), neighbors)
-            network_update[node]["remove"].append(np.random.choice(neighbors))
-            network_update[node]["add"].append(np.random.choice(other_nodes))
+        network_update[node] = {"remove": [], "add": []}
+        for neighbor in range(matrix_size[0]):
+            if remove_matrix[node, neighbor] == 1:
+                network_update[node]["remove"].append(neighbor)
+            if add_matrix[node, neighbor] == 1:
+                network_update[node]["add"].append(neighbor)
     return {'edge_change': network_update}
 
 def event(nodes, model):

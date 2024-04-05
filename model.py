@@ -28,6 +28,7 @@ def init_model(constants):
     model.fin_hist = initial_fin_hist(model)
     model.RFC_hist = initial_RFC_hist(model)
     model.SWB_hist = initial_SWB_hist(model)
+    model.beta = 1
 
     # Set SDA connections if network type is SDA
     if model.constants["type"] == "SDA":

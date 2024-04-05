@@ -1,12 +1,13 @@
 import numpy as np
 from tqdm import tqdm
 from SALib.analyze.sobol import analyze
+from SALib.analyze import pawn
 from SALib.sample.sobol import sample
 from functions import extract_data
 from model import init_model
 
 
-def GSA(constants, its, samples, parameters=[], bounds=[[]]):
+def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type = "Normal"):
     """
     Global Sensitivity Analysis
     """
@@ -23,7 +24,6 @@ def GSA(constants, its, samples, parameters=[], bounds=[[]]):
     
     data = np.empty(len(param_values))
     for index, params in tqdm(enumerate(param_values)):
-        print(params)
         for param_ind, param in enumerate(params):
             constants[parameters[param_ind]] = param
         model = init_model(constants)
@@ -32,10 +32,10 @@ def GSA(constants, its, samples, parameters=[], bounds=[[]]):
         data[index] = np.mean(SWB[-1])
     
     # Perform analysis
-    Si = analyze(problem, data, print_to_console=True)
-
-    # Print the first-order sensitivity indices
-    print(Si['S1'])
+    if sa_type == "Normal":
+        Si = analyze(problem, data, print_to_console=True)
+    elif sa_type == "Pawn":
+        Si = pawn.analyze(problem, param_values, data, S=10, print_to_console=False)
 
     return Si
 

@@ -10,8 +10,11 @@ constants = {
     'p' : 0.1,
     'segregation': 0.9,
     # Likert scale low and high
-    "L_low" : 0,
+    "L_low" : 1,
     "L_high" : 10,
+    # SWB initialisation
+    "SWB_mu" : 7,
+    "SWB_sd" : 2,
     # Event size
     "event_prob": 0.05,
     "event_size" : 1,
