@@ -2,9 +2,12 @@ import numpy as np
 from dynsimf.models.components.conditions.Condition import ConditionType
 from dynsimf.models.components.conditions.StochasticCondition import StochasticCondition
 from parameters import constants
-from functions import calc_RFC, bisection, SDA_prob, SDA_root
+from functions import calc_RFC, SDA_prob
 import scipy.ndimage as ndimage
+from scipy.spatial.distance import cdist
 from sklearn.preprocessing import normalize
+from initialise import initial_RFC_hist
+from SDA import SDA
 
 # Update conditions
 update_conditions = {
@@ -12,6 +15,11 @@ update_conditions = {
     "Event" : StochasticCondition(ConditionType.STATE, constants["event_prob"]),
     "Network" : StochasticCondition(ConditionType.STATE, 0.01),
 }
+
+def initial_RFC_update(model):
+    model.RFC_hist = initial_RFC_hist(model)
+    RFC = calc_RFC(model)
+    return {"RFC": RFC}
 
 # Initial updates to the model
 def initial_network_update(model):
@@ -30,17 +38,17 @@ def initial_network_update(model):
     fin = model.get_state("financial").reshape(N, 1)
     alpha = model.constants["segregation"]
 
-    # Calculate euclidean distance between nodes based on financial status
-    dist = np.abs(fin - fin.T)
+    # TODO add nonfin also to distance matrix?
 
-    # Calculate beta using the bisection method to find the root of the SDA function
-    beta_min = 0.1
-    beta_max = 10
-    beta = bisection(SDA_root, exp_con, N, dist, alpha, beta_min, beta_max, 0.01)
-    model.beta = beta
+    # Calculate euclidean distance between nodes based on financial status
+    dist = cdist(fin, fin, metric='euclidean')
+
+    # TODO decide if we want to calculate beta?
+    # sda = SDA.from_dist_matrix(D = dist, k=exp_con, alpha=alpha)
+    # adj_mat = sda.adjacency_matrix(sparse=False)
 
     # Calculate connection probabilities
-    probs = SDA_prob(dist, alpha, beta)
+    probs = SDA_prob(dist, alpha, model.constants["beta"])
 
     # Create adjacency matrix and convert it to dictionary containing node pairs for edges
     adj_mat = np.random.binomial(size=np.shape(probs), n=1, p=probs)
@@ -61,8 +69,8 @@ def update_states(model):
     # Load states
     hab = model.get_state("habituation")
     SWB, SWB_norm = model.get_state("SWB"), model.get_state("SWB_norm")
-    fin = model.get_state("financial")
-    fin_hist, RFC_hist, SWB_hist = model.fin_hist, model.RFC_hist, model.SWB_hist
+    fin, nonfin = model.get_state("financial"), model.get_state("nonfin")
+    fin_hist, nonfin_hist, RFC_hist, SWB_hist = model.fin_hist, model.nonfin_hist, model.RFC_hist, model.SWB_hist
     N = model.constants['N']
 
     # Dict to save param changes to
@@ -77,35 +85,59 @@ def update_states(model):
     # Calculate expectations based on history and smoothing
     # TODO 1 for loop instead of 3
     # Axis argument gaussian filter
-    fin_exp = np.array([ndimage.gaussian_filter(fin_hist[i], hab[i], )[-1] for i in range(N)])
-    RFC_exp = np.array([ndimage.gaussian_filter(RFC_hist[i], hab[i], )[-1] for i in range(N)])
-    SWB_exp = np.array([ndimage.gaussian_filter(SWB_hist[i], hab[i], )[-1] for i in range(N)])
+    fin_exp, nonfin_exp, RFC_exp, SWB_exp = np.empty((N)), np.empty((N)), np.empty((N)), np.empty((N))
+    for i in range(N):
+        fin_exp[i] = ndimage.gaussian_filter(fin_hist[i], hab[i])[-1]
+        nonfin_exp[i] = ndimage.gaussian_filter(nonfin_hist[i], hab[i], )[-1]
+        RFC_exp[i] = ndimage.gaussian_filter(RFC_hist[i], hab[i], )[-1]
+        SWB_exp[i] = ndimage.gaussian_filter(SWB_hist[i], hab[i], )[-1]
+    # fin_exp = np.array([ndimage.gaussian_filter(fin_hist[i], hab[i], )[-1] for i in range(N)])
+    # nonfin_exp = np.array([ndimage.gaussian_filter(nonfin_hist[i], hab[i], )[-1] for i in range(N)])
+    # RFC_exp = np.array([ndimage.gaussian_filter(RFC_hist[i], hab[i], )[-1] for i in range(N)])
+    # SWB_exp = np.array([ndimage.gaussian_filter(SWB_hist[i], hab[i], )[-1] for i in range(N)])
+
+    # TODO sensitization and desensitization
+    # fin_sens_factor = 
+    # fin_desens_factor = 
+    # nonfin_sens_factor = 
+    # nonfin_desens_factor = 
 
     # Calculate difference between expected and actual values
     RFC_rel = RFC_cur / RFC_exp
     fin_rel = fin / fin_exp
-
+    nonfin_rel = nonfin / nonfin_exp 
     # Change SWB based on Range-Frequency and financial stock
     # SWB change based on system dynamics paper
     # Divided by 2 since 2 factors now instead of 1
     RFC_SWB_change = 0.5 * ((1/0.691347) * np.log(RFC_rel+1)-1)
     fin_SWB_change = 0.5 * ((1/0.691347) * np.log(fin_rel+1)-1)
-    param_chgs["SWB"] = np.clip(SWB_norm + 0.5 * (RFC_SWB_change + fin_SWB_change), 0, 10)
+    total_fin_change = RFC_SWB_change + fin_SWB_change
+
+    # SWB change based on system dynamics paper
+    nonfin_change = (1/0.693147)*np.log(nonfin_rel+1)-1
+
+    # Total change is bounded
+    new_SWB = np.clip(SWB_norm + total_fin_change + nonfin_change, 0, 10)
+
+    param_chgs["SWB"] = new_SWB
 
     # Save expectations
     param_chgs["fin_exp"] = fin_exp
+    param_chgs["nonfin_exp"] = nonfin_exp
     param_chgs["RFC_exp"] = RFC_exp
     param_chgs["SWB_exp"] = SWB_exp
 
-    # Calculate change on financial based on SWB change with expectations
-    SWB_delta = SWB - SWB_exp
-    param_chgs["financial"] = np.maximum(fin + 0.1 * SWB_delta, 1)
+    # Calculate feedback effects based on SWB change with expectations
+    SWB_delta = new_SWB - SWB_exp
+    param_chgs["financial"] = np.maximum(fin + model.constants["fb_fin"] * SWB_delta, 1)
+    param_chgs["nonfin"] = np.maximum(nonfin + model.constants["fb_nonfin"] * SWB_delta, 1)
 
     # Calculate and save community SWB
     param_chgs["SWB_comm"] = np.array([np.mean(SWB[np.append(model.get_neighbors(node), model.get_neighbors_neighbors(node)).astype(int)]) for node in model.nodes])
 
     # Change history
     model.fin_hist = np.append(fin_hist[:, 1:], fin.reshape(N, 1), axis=1)
+    model.nonfin_hist = np.append(nonfin_hist[:, 1:], nonfin.reshape(N, 1), axis=1)    
     model.RFC_hist = np.append(RFC_hist[:, 1:], RFC_cur.reshape(N, 1), axis=1)
     model.SWB_hist = np.append(SWB_hist[:, 1:], SWB.reshape(N, 1), axis=1)
 
@@ -116,12 +148,12 @@ def update_network(nodes, model):
     Function which changes the network by removing and adding connections
     """
     alpha = model.constants["segregation"]
-    beta = model.beta
+    # beta = model.beta
     N = model.constants["N"]
     fin = model.get_state("financial").reshape(N, 1)
 
     dist = np.abs(fin - fin.T)
-    probs = SDA_prob(dist, alpha, beta)
+    probs = SDA_prob(dist, alpha, model.constants["beta"])
     matrix_size = np.shape(probs)
     # Get probability to be removed for neighbors, normalized to 1
     remove_probs = normalize(model.get_adjacency() * (1-probs), axis=1, norm='l1')
@@ -164,6 +196,9 @@ def pulse(model_input, model):
     return np.array([])
 
 def intervention(model):
+    """
+    Perform intervention on all nodes
+    """
     fin = model.get_state("financial")
     int_size = model.constants["intervention_size"]
     return {"financial": fin + int_size}

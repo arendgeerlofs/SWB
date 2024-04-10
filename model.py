@@ -5,9 +5,9 @@ from dynsimf.models.components.Update import UpdateType
 from dynsimf.models.components.Update import UpdateConfiguration
 from dynsimf.models.components.conditions.CustomCondition import CustomCondition
 
-from initialise import init_states, init_network, initial_fin_hist, initial_RFC_hist, initial_SWB_hist
+from initialise import init_states, init_network, initial_fin_hist, initial_RFC_hist, initial_SWB_hist, initial_nonfin_hist
 from functions import get_nodes
-from update import update_conditions, update_states, update_network, event, initial_network_update, intervention, pulse
+from update import update_conditions, update_states, update_network, event, initial_network_update, intervention, pulse, initial_RFC_update
 
 
 def init_model(constants):
@@ -26,9 +26,9 @@ def init_model(constants):
     model.set_initial_state(init_states, init_params)
 
     model.fin_hist = initial_fin_hist(model)
+    model.nonfin_hist = initial_nonfin_hist(model)
     model.RFC_hist = initial_RFC_hist(model)
     model.SWB_hist = initial_SWB_hist(model)
-    model.beta = 1
 
     # Set SDA connections if network type is SDA
     if model.constants["type"] == "SDA":
@@ -39,6 +39,14 @@ def init_model(constants):
             })
         int_net = Update(initial_network_update, initial_network_cfg) # Create an Update object that contains the object function
         model.add_scheme(Scheme(get_nodes, {'args': {'graph': model.graph}, 'lower_bound': 0, 'upper_bound': 1, 'updates': [int_net]}))
+
+        initial_RFC_cfg = UpdateConfiguration({
+            'arguments': {"model": model},
+            'get_nodes': False,
+            'update_type': UpdateType.STATE
+            })
+        int_RFC = Update(initial_RFC_update, initial_RFC_cfg)
+        model.add_scheme(Scheme(get_nodes, {'args': {'graph': model.graph}, 'lower_bound': 0, 'upper_bound': 1, 'updates': [int_RFC]}))
 
     # Update rules
     model.add_update(update_states, {"model":model})

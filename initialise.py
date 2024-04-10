@@ -37,6 +37,10 @@ def initial_expected_fin(model):
     "Initialise expected values based on actual initial value"
     return model.get_state("financial")
 
+def initial_expected_nonfin(model):
+    "Initialise expected values based on actual initial value"
+    return model.get_state("nonfin")
+
 def initial_RFC(model):
     "Set initial RFC to actual RFC based on the initial financial statuses and social connections"
     return calc_RFC(model)
@@ -52,6 +56,10 @@ def initial_expected_RFC(model):
 def initial_fin_hist(model):
     "Initialise history of financial stock equal to current stock for history length of time steps"
     return model.get_state("financial").reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
+
+def initial_nonfin_hist(model):
+    "Initialise history of financial stock equal to current stock for history length of time steps"
+    return model.get_state("nonfin").reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
 
 def initial_RFC_hist(model):
     "Initialise history of RFC stock equal to current stock for history length of time steps"
@@ -76,20 +84,17 @@ init_states = {
 
     # Adaptation properties
     'habituation': initial_hab,
-    # 'sensitisation': initial_Likert,
-    # 'desensitisation': initial_Likert,
+    'sensitisation': initial_Likert,
+    'desensitisation': initial_Likert,
 
     # # Personality traits
-    # 'extraversion': initial_Likert,
-    # 'neuroticism': initial_Likert,
-    # 'openness': initial_Likert,
-    # 'conscientiesness': initial_Likert,
-    # 'agreeableness': initial_Likert,
+    'soc_w': initial_Likert,
 
     # Individual properties
     'financial': initial_Likert,
-    # 'fin_hist' : initial_fin_hist,
     'fin_exp': initial_expected_fin,
+    'nonfin' : initial_Likert,
+    'nonfin_exp' : initial_expected_nonfin,
 
     # External property
     # 'Evironment': initial_Likert,
