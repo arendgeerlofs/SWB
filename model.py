@@ -4,6 +4,7 @@ from dynsimf.models.Model import Model
 from initialise import init_states, init_network, initial_fin_hist, initial_RFC_hist, initial_SWB_hist, initial_nonfin_hist
 from update import update_conditions, update_states, update_network
 import dask
+from visualisation import plot_avg
 
 def init_model(constants):
     # Create values for fin and nonfin that are used in SDA distance
@@ -53,3 +54,13 @@ def run_model(model, iterations, verbose=True):
     output = model.simulate(iterations, show_tqdm=verbose)
 
     return output
+
+def all_scenarios(params, scenarios, its, verbose=True, plot=True):
+    for scenario_name in scenarios:
+        for param_id, param in enumerate(scenarios[scenario_name]):
+            params[param] = scenarios[scenario_name][param]
+        model = init_model(params)
+        output = run_model(model, its, verbose=verbose)
+        if plot:
+            plot_avg(output, name_addition=f"scenarios/{scenario_name}")
+

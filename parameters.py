@@ -2,7 +2,7 @@
 File containing all the parameter values and constants
 """
 
-constants = {
+params = {
     # Network parameters
     "type" : "SDA",
     'N' : 100,

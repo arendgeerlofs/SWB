@@ -1,19 +1,22 @@
 """
 run file
 """
-from model import init_model, run_model
+from model import init_model, run_model, all_scenarios
 from sa import GSA, LSA
-from visualisation import visualise, plot, plot_for_one, SWB_gif
-from parameters import constants
+from visualisation import visualise, plot_avg, plot_for_one, SWB_gif
+from parameters import params
+from scenarios import scenarios
 
 ITERATIONS = 50
 # RUNS = 10
 
-model = init_model(constants)
-output = run_model(model, ITERATIONS)
+# model = init_model(params)
+# output = run_model(model, ITERATIONS)
 
-plot_for_one(output, plot_from=0)
-plot(output)
+# plot_for_one(output)
+# plot_avg(output)
+
+all_scenarios(params, scenarios, ITERATIONS)
 # SWB_gif(output, ITERATIONS, fps=5, name="SWB_hist", xlabel="SWB score",
 #         ylabel="Amount", xlim=(0, 10), ylim=[0, 10])
 # visualise(model, output)

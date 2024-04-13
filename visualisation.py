@@ -23,7 +23,7 @@ def visualise(model, output):
     model.configure_visualization(visualization_config, output)
     model.visualize('animation')
 
-def plot(output, columns_to_plot= ["SWB", "SWB_exp", "financial", "fin_exp", "nonfin", "nonfin_exp"], plot_from=0):
+def plot_avg(output, columns_to_plot= ["SWB", "SWB_exp", "financial", "fin_exp", "nonfin", "nonfin_exp"], plot_from=0, name_addition="avgs"):
     arrays = [output['states'][key] for key in output['states']]
     data = np.stack(arrays, axis=0)
     pop_avg = np.mean(data, axis=1)
@@ -35,11 +35,10 @@ def plot(output, columns_to_plot= ["SWB", "SWB_exp", "financial", "fin_exp", "no
     ax.set_ylabel('Value')
     ax.set_title('Drivers and SWB over time')
     ax.legend()
+    plt.savefig(f"figures/{name_addition}")
 
-    plt.savefig("avg")  
 
-
-def plot_for_one(output, plot_from=0):
+def plot_for_one(output, plot_from=0, name_addition=""):
     # Plot data
     # Print SWB scores over time of person 0
     SWB_scores = [[output["states"][a][0][1]] for a in output["states"]]
@@ -62,26 +61,26 @@ def plot_for_one(output, plot_from=0):
     plt.plot(SWB_exp[plot_from:], 'r.-')
     plt.plot(SWB_norm[plot_from:], 'g.-')
     # plt.ylim(0, 10)
-    plt.savefig("figures/SWB")
+    plt.savefig(f"figures/SWB_{name_addition}")
     plt.clf()   # Clear figure
     plt.plot(fin_scores[plot_from:], 'b.-')
     plt.plot(expectation_scores[plot_from:], 'r.-')
     # plt.ylim(0, 10)
-    plt.savefig("figures/fin")
+    plt.savefig(f"figures/fin_{name_addition}")
     plt.clf()
     plt.plot(nonfin_scores[plot_from:], 'b.-')
     plt.plot(nonfin_expectation_scores[plot_from:], 'r.-')
     # plt.ylim(0, 10)
-    plt.savefig("figures/nonfin")
+    plt.savefig(f"figures/nonfin_{name_addition}")
     plt.clf()
     plt.plot(fin_sens[plot_from:], 'b.-')
     plt.plot(nonfin_sens[plot_from:], 'r.-')
-    plt.savefig("figures/sens")
+    plt.savefig(f"figures/sens_{name_addition}")
     plt.clf()
     plt.plot(RFC[plot_from:], 'b.-')
     plt.plot(RFC_exp[plot_from:], 'r.-')
     plt.ylim(0, 10)
-    plt.savefig("figures/RFC")
+    plt.savefig(f"figures/RFC_{name_addition}")
 
 def SWB_gif(model, output, iterations, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
     # Get SWB data
