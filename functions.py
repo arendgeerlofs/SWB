@@ -64,3 +64,21 @@ def extract_data(N, output, state_number):
     for timestep in output["states"]:
         data[timestep] = output["states"][timestep][:, state_number]
     return data
+
+# TODO find paper explaining dynamics, right now only sensitization model in that higher values sensitise and lower desensitise
+def calc_sens(sens, sens_factor, desens_factor, event_change, type=1):
+    if len(event_change) == 1:
+        event_change = event_change * len(sens)
+    new_sens = np.empty(len(sens))
+    for node, value in enumerate(sens):
+        if type == 1:
+            if event_change[node] > 0:
+                new_sens[node] = value / (1 + ((sens_factor[node] * event_change[node]) / 10))
+            else:
+                new_sens[node] = value * (1 + (-(desens_factor[node] * event_change[node]) / 10))
+        elif type == 2:
+            if event_change[node] > 0:
+                new_sens[node] = value * (1 + ((sens_factor[node] * event_change[node]) / 10))
+            else:
+                new_sens[node] = value / (1 + (-(desens_factor[node] * event_change[node]) / 10))
+    return new_sens

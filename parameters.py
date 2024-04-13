@@ -21,9 +21,13 @@ constants = {
     "event_size" : 1,
     # Parameter indicating change of model during simulations
     "upd_net" : True,
-    # Intervention size
+    # Pulse intervention size
     "intervention_size" : 1,
     "intervention_gap" : 10,
+    # Set intervention
+    "int_ts": [10, 40],
+    "int_size": [1, -1],
+    "int_var": ["fin", "fin"],
     # History length
     "hist_len" : 10,
     # Feedback parameters

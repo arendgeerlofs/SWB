@@ -5,6 +5,7 @@ from SALib.analyze import pawn
 from SALib.sample.sobol import sample
 from functions import extract_data
 from model import init_model
+import dask
 
 
 def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type = "Normal"):
@@ -31,6 +32,7 @@ def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type = "Normal")
         SWB = extract_data(constants["N"], output, 1)
         data[index] = np.mean(SWB[-1])
     
+    # dask.compute(data)
     # Perform analysis
     if sa_type == "Normal":
         Si = analyze(problem, data, print_to_console=True)

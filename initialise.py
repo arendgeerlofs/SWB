@@ -1,9 +1,10 @@
 import networkx as nx
 import numpy as np
-from functions import calc_RFC
+from functions import calc_RFC, SDA_prob
+from scipy.spatial.distance import cdist
 
 # TODO social distance attachment
-def init_network(size=100, net_type="Rd", p=0.5, m=5):
+def init_network(size=100, net_type="Rd", p=0.5, m=5, alpha=0.3, beta=0.5, fin=0, nonfin=0):
     if net_type == "BA":
         return nx.barabasi_albert_graph(size, m)
     elif net_type == "Rd":
@@ -11,6 +12,19 @@ def init_network(size=100, net_type="Rd", p=0.5, m=5):
     elif net_type == "SDA":
         g = nx.Graph()
         g.add_nodes_from([i for i in range(100)])
+
+        fin = fin.reshape(size, 1)
+        nonfin = nonfin.reshape(size, 1)
+        dist = cdist(fin, fin, metric='euclidean')
+        probs = SDA_prob(dist, alpha, beta)
+
+        adj_mat = np.random.binomial(size=np.shape(probs), n=1, p=probs)
+        network_update = {}
+        for node, row in enumerate(adj_mat):
+            network_update[node] = {"add": []}
+            for neighbor, value in enumerate(row):
+                if value == 1 and node != neighbor:
+                    g.add_edge(node, neighbor)
         return g
     else:
         print("Invalid network structure name")
@@ -43,6 +57,7 @@ def initial_expected_nonfin(model):
 
 def initial_RFC(model):
     "Set initial RFC to actual RFC based on the initial financial statuses and social connections"
+    # return np.ones(100)
     return calc_RFC(model)
 
 def initial_expected_SWB(model):
@@ -61,9 +76,9 @@ def initial_nonfin_hist(model):
     "Initialise history of financial stock equal to current stock for history length of time steps"
     return model.get_state("nonfin").reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
 
-def initial_RFC_hist(model):
+def initial_RFC_hist(model, RFC):
     "Initialise history of RFC stock equal to current stock for history length of time steps"
-    return model.get_state("RFC").reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
+    return RFC.reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
 
 def initial_SWB_hist(model):
     "Initialise history of SWB equal to current stock for history length of time steps"
@@ -74,6 +89,14 @@ def initial_SWB_comm(model):
     # return np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
     return model.get_state("RFC")
 
+def initial_sens(model):
+    return np.ones(model.constants["N"])
+
+def init_fin(model):
+    return model.init_fin
+
+def init_nonfin(model):
+    return model.init_nonfin
 
 init_states = {
     # The goal
@@ -91,17 +114,17 @@ init_states = {
     'soc_w': initial_Likert,
 
     # Individual properties
-    'financial': initial_Likert,
+    'financial': init_fin,
     'fin_exp': initial_expected_fin,
-    'nonfin' : initial_Likert,
+    'nonfin' : init_nonfin,
     'nonfin_exp' : initial_expected_nonfin,
 
-    # External property
-    # 'Evironment': initial_Likert,
+    # Sensitivity index
+    'fin_sens':initial_sens,
+    'nonfin_sens':initial_sens,
 
-    # Expected values
+    # Social comparison
     'RFC': initial_RFC,
-    # 'RFC_hist' : initial_RFC_hist,
     'RFC_exp': initial_expected_RFC,
 }
 

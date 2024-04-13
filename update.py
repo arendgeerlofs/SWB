@@ -2,7 +2,7 @@ import numpy as np
 from dynsimf.models.components.conditions.Condition import ConditionType
 from dynsimf.models.components.conditions.StochasticCondition import StochasticCondition
 from parameters import constants
-from functions import calc_RFC, SDA_prob
+from functions import calc_RFC, SDA_prob, calc_sens
 import scipy.ndimage as ndimage
 from scipy.spatial.distance import cdist
 from sklearn.preprocessing import normalize
@@ -17,8 +17,8 @@ update_conditions = {
 }
 
 def initial_RFC_update(model):
-    model.RFC_hist = initial_RFC_hist(model)
     RFC = calc_RFC(model)
+    model.RFC_hist = initial_RFC_hist(model, RFC)
     return {"RFC": RFC}
 
 # Initial updates to the model
@@ -72,49 +72,39 @@ def update_states(model):
     fin, nonfin = model.get_state("financial"), model.get_state("nonfin")
     fin_hist, nonfin_hist, RFC_hist, SWB_hist = model.fin_hist, model.nonfin_hist, model.RFC_hist, model.SWB_hist
     N = model.constants['N']
+    fin_sens, nonfin_sens = model.get_state("fin_sens"), model.get_state("nonfin_sens")
 
     # Dict to save param changes to
     param_chgs = {}
 
     # Calculate current RFC
     RFC_cur = calc_RFC(model)
-
+    cur_it = len(model.simulation_output["states"])
     # Save current RFC
     param_chgs["RFC"] = RFC_cur
 
     # Calculate expectations based on history and smoothing
-    # TODO 1 for loop instead of 3
-    # Axis argument gaussian filter
     fin_exp, nonfin_exp, RFC_exp, SWB_exp = np.empty((N)), np.empty((N)), np.empty((N)), np.empty((N))
     for i in range(N):
         fin_exp[i] = ndimage.gaussian_filter(fin_hist[i], hab[i])[-1]
         nonfin_exp[i] = ndimage.gaussian_filter(nonfin_hist[i], hab[i], )[-1]
         RFC_exp[i] = ndimage.gaussian_filter(RFC_hist[i], hab[i], )[-1]
         SWB_exp[i] = ndimage.gaussian_filter(SWB_hist[i], hab[i], )[-1]
-    # fin_exp = np.array([ndimage.gaussian_filter(fin_hist[i], hab[i], )[-1] for i in range(N)])
-    # nonfin_exp = np.array([ndimage.gaussian_filter(nonfin_hist[i], hab[i], )[-1] for i in range(N)])
-    # RFC_exp = np.array([ndimage.gaussian_filter(RFC_hist[i], hab[i], )[-1] for i in range(N)])
-    # SWB_exp = np.array([ndimage.gaussian_filter(SWB_hist[i], hab[i], )[-1] for i in range(N)])
-
-    # TODO sensitization and desensitization
-    # fin_sens_factor = 
-    # fin_desens_factor = 
-    # nonfin_sens_factor = 
-    # nonfin_desens_factor = 
 
     # Calculate difference between expected and actual values
     RFC_rel = RFC_cur / RFC_exp
     fin_rel = fin / fin_exp
-    nonfin_rel = nonfin / nonfin_exp 
+    nonfin_rel = nonfin / nonfin_exp
+
     # Change SWB based on Range-Frequency and financial stock
     # SWB change based on system dynamics paper
     # Divided by 2 since 2 factors now instead of 1
-    RFC_SWB_change = 0.5 * ((1/0.691347) * np.log(RFC_rel+1)-1)
-    fin_SWB_change = 0.5 * ((1/0.691347) * np.log(fin_rel+1)-1)
-    total_fin_change = RFC_SWB_change + fin_SWB_change
+    RFC_SWB_change = 0.5 * ((1/0.693147180560) * np.log(RFC_rel+1)-1)
+    fin_SWB_change = 0.5 * ((1/0.693147180560) * np.log(fin_rel+1)-1)
+    total_fin_change = RFC_SWB_change + fin_SWB_change * fin_sens
 
     # SWB change based on system dynamics paper
-    nonfin_change = (1/0.693147)*np.log(nonfin_rel+1)-1
+    nonfin_change = ((1/0.693147180560)*np.log(nonfin_rel+1)-1) * nonfin_sens
 
     # Total change is bounded
     new_SWB = np.clip(SWB_norm + total_fin_change + nonfin_change, 0, 10)
@@ -133,8 +123,8 @@ def update_states(model):
     param_chgs["nonfin"] = np.maximum(nonfin + model.constants["fb_nonfin"] * SWB_delta, 1)
 
     # Calculate and save community SWB
-    param_chgs["SWB_comm"] = np.array([np.mean(SWB[np.append(model.get_neighbors(node), model.get_neighbors_neighbors(node)).astype(int)]) for node in model.nodes])
-
+    # param_chgs["SWB_comm"] = np.array([np.mean(SWB[np.append(model.get_neighbors(node), model.get_neighbors_neighbors(node)).astype(int)]) for node in model.nodes])
+    param_chgs["SWB_comm"] = 1
     # Change history
     model.fin_hist = np.append(fin_hist[:, 1:], fin.reshape(N, 1), axis=1)
     model.nonfin_hist = np.append(nonfin_hist[:, 1:], nonfin.reshape(N, 1), axis=1)    
@@ -180,11 +170,14 @@ def event(nodes, model):
     # Get financial status and event size
     fin = model.get_state("financial")
     event_size = model.constants["event_size"]
+    fin_sens = model.get_state('fin_sens')
+    sens, desens = model.get_state('sensitisation'), model.get_state('desensitisation')
 
     # Calculate event
-    change = np.random.normal(0, event_size)
+    change = np.random.normal(0, event_size, len(nodes))
 
-    return {"financial": np.maximum(fin[nodes] + change, 1)}
+    new_fin_sens = calc_sens(fin_sens[nodes], sens[nodes], desens[nodes], change / event_size, type=1)
+    return {"financial": np.maximum(fin[nodes] + change, 1), 'fin_sens': np.clip(new_fin_sens, 0.25, 4)}
 
 def pulse(model_input, model):
     """
@@ -195,10 +188,21 @@ def pulse(model_input, model):
         return model_input[0]
     return np.array([])
 
+def set_pulse(model_input, model, it):
+    cur_it = len(model.simulation_output["states"])
+    if cur_it == it:
+        return model_input[0]  
+    return np.array([])  
+
 def intervention(model):
     """
     Perform intervention on all nodes
     """
     fin = model.get_state("financial")
     int_size = model.constants["intervention_size"]
-    return {"financial": fin + int_size}
+    event_size = model.constants["event_size"]
+    fin_sens = model.get_state('fin_sens')
+    sens, desens = model.get_state('sensitisation'), model.get_state('desensitisation')
+
+    new_fin_sens = calc_sens(fin_sens, sens, desens, [int_size / event_size], type=1)
+    return {"financial": fin + int_size, 'fin_sens': np.clip(new_fin_sens, 0.25, 4)}

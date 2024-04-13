@@ -2,7 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.animation as animation
 import timeit
+import pandas as pd
 from functions import extract_data
+from initialise import init_states
 
 def visualise(model, output): 
     visualization_config = {
@@ -21,7 +23,23 @@ def visualise(model, output):
     model.configure_visualization(visualization_config, output)
     model.visualize('animation')
 
-def plot(output, plot_from=0):
+def plot(output, columns_to_plot= ["SWB", "SWB_exp", "financial", "fin_exp", "nonfin", "nonfin_exp"], plot_from=0):
+    arrays = [output['states'][key] for key in output['states']]
+    data = np.stack(arrays, axis=0)
+    pop_avg = np.mean(data, axis=1)
+    df_pop_avg = pd.DataFrame(pop_avg, columns=list(init_states.keys()))
+    # df_pop_avg[columns_to_plot].plot()
+
+    ax = df_pop_avg[columns_to_plot].plot(marker='.', label=columns_to_plot)
+    ax.set_xlabel('Time')
+    ax.set_ylabel('Value')
+    ax.set_title('Drivers and SWB over time')
+    ax.legend()
+
+    plt.savefig("avg")  
+
+
+def plot_for_one(output, plot_from=0):
     # Plot data
     # Print SWB scores over time of person 0
     SWB_scores = [[output["states"][a][0][1]] for a in output["states"]]
@@ -32,8 +50,10 @@ def plot(output, plot_from=0):
     expectation_scores = [[output["states"][a][0][9]] for a in output["states"]]
     nonfin_scores = [[output["states"][a][0][10]] for a in output["states"]]
     nonfin_expectation_scores = [[output["states"][a][0][11]] for a in output["states"]]
-    RFC = [[output["states"][a][0][12]] for a in output["states"]]
-    RFC_exp = [[output["states"][a][0][13]] for a in output["states"]]
+    fin_sens = [[output["states"][a][0][12]] for a in output["states"]]
+    nonfin_sens = [[output["states"][a][0][13]] for a in output["states"]]
+    RFC = [[output["states"][a][0][14]] for a in output["states"]]
+    RFC_exp = [[output["states"][a][0][15]] for a in output["states"]]
 
     # Plot SWB scores over time
     # TODO change to averages
@@ -41,18 +61,26 @@ def plot(output, plot_from=0):
     plt.plot(SWB_scores[plot_from:])
     plt.plot(SWB_exp[plot_from:])
     plt.plot(SWB_norm[plot_from:], 'g')
+    plt.ylim(0, 10)
     plt.savefig("figures/SWB")
     plt.clf()   # Clear figure
     plt.plot(fin_scores[plot_from:])
     plt.plot(expectation_scores[plot_from:])
+    plt.ylim(0, 10)
     plt.savefig("figures/fin")
     plt.clf()
     plt.plot(nonfin_scores[plot_from:])
     plt.plot(nonfin_expectation_scores[plot_from:])
+    plt.ylim(0, 10)
     plt.savefig("figures/nonfin")
+    plt.clf()
+    plt.plot(fin_sens[plot_from:])
+    plt.plot(nonfin_sens[plot_from:])
+    plt.savefig("figures/sens")
     plt.clf()
     plt.plot(RFC[plot_from:])
     plt.plot(RFC_exp[plot_from:])
+    plt.ylim(0, 10)
     plt.savefig("figures/RFC")
 
 def SWB_gif(model, output, iterations, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
