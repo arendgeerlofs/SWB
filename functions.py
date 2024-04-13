@@ -20,45 +20,9 @@ def calc_RFC(model):
             RFC_cur[node] = soc_w[node] * R_i + (1-soc_w[node])*F_i
     return 10* RFC_cur
 
-def get_nodes(graph):
-    return graph.nodes
-
-# def SDA_root(exp_con, N, dist, alpha, beta):
-#     probs = SDA_prob(dist, alpha, beta)
-#     return exp_con - (1/N) * np.sum(probs)
-
 def SDA_prob(dist, alpha, beta):
     return 1 / (1+(beta**(-1)*dist)**alpha)
 
-# def bisection(f, exp_con, N, dist, alpha, b_min, b_max, tol): 
-#     # approximates a root, R, of f bounded 
-#     # by a and b to within tolerance 
-#     # | f(m) | < tol with m the midpoint 
-#     # between a and b Recursive implementation
-#     b_min_sign = np.sign(f(exp_con, N, dist, alpha, b_min))
-#     b_max_sign = np.sign(f(exp_con, N, dist, alpha, b_max))
-#     # check if a and b bound a root
-#     if b_min_sign == b_max_sign:
-#         raise Exception(
-#          "The scalars a and b do not bound a root")
-        
-#     # get midpoint
-#     m = (b_min + b_max)/2
-
-#     b_mid_sign = np.sign(f(exp_con, N, dist, alpha, m))
-    
-#     if np.abs(f(exp_con, N, dist, alpha, m)) < tol:
-#         # stopping condition, report m as root
-#         return m
-#     elif b_min_sign == b_mid_sign:
-#         # case where m is an improvement on a. 
-#         # Make recursive call with a = m
-#         return bisection(f, exp_con, N, dist, alpha, m, b_max, tol)
-#     elif b_max_sign == b_mid_sign:
-#         # case where m is an improvement on b. 
-#         # Make recursive call with b = m
-#         return bisection(f, exp_con, N, dist, alpha, b_min, m, tol)
-    
 def extract_data(N, output, state_number):
     data = np.zeros((len(output["states"]), N))
     for timestep in output["states"]:
@@ -66,17 +30,15 @@ def extract_data(N, output, state_number):
     return data
 
 # TODO find paper explaining dynamics, right now only sensitization model in that higher values sensitise and lower desensitise
-def calc_sens(sens, sens_factor, desens_factor, event_change, type=1):
-    if len(event_change) == 1:
-        event_change = event_change * len(sens)
+def calc_sens(sens, sens_factor, desens_factor, event_change, type="fin"):
     new_sens = np.empty(len(sens))
     for node, value in enumerate(sens):
-        if type == 1:
+        if type == "fin":
             if event_change[node] > 0:
                 new_sens[node] = value / (1 + ((sens_factor[node] * event_change[node]) / 10))
             else:
                 new_sens[node] = value * (1 + (-(desens_factor[node] * event_change[node]) / 10))
-        elif type == 2:
+        elif type == "nonfin":
             if event_change[node] > 0:
                 new_sens[node] = value * (1 + ((sens_factor[node] * event_change[node]) / 10))
             else:
