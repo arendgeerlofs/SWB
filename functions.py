@@ -23,13 +23,15 @@ def calc_RFC(model):
 def SDA_prob(dist, alpha, beta):
     return 1 / (1+(beta**(-1)*dist)**alpha)
 
-def extract_data(N, output, state_number):
-    data = np.zeros((len(output["states"]), N))
+def extract_data(nodes, output, state_number):
+    """
+    Extract the data from the model output for all nodes and return as a 3d array
+    """
+    data = np.zeros((len(output["states"]), nodes))
     for timestep in output["states"]:
         data[timestep] = output["states"][timestep][:, state_number]
     return data
 
-# TODO find paper explaining dynamics, right now only sensitization model in that higher values sensitise and lower desensitise
 def calc_sens(sens, sens_factor, desens_factor, event_change, type="fin"):
     new_sens = np.empty(len(sens))
     for node, value in enumerate(sens):
@@ -44,3 +46,5 @@ def calc_sens(sens, sens_factor, desens_factor, event_change, type="fin"):
             else:
                 new_sens[node] = value / (1 + (-(desens_factor[node] * event_change[node]) / 10))
     return new_sens
+
+

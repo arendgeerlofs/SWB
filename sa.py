@@ -1,14 +1,30 @@
 import numpy as np
 from tqdm import tqdm
+import multiprocessing
+from SALib.analyze import sobol
 from SALib.analyze.sobol import analyze
 from SALib.analyze import pawn
 from SALib.sample.sobol import sample
+from SALib.sample import saltelli
 from functions import extract_data
-from model import init_model
+from model import init_model, run
 import dask
 
+def run_model(param_values, constants, problem, its, output_queue):
+    """
+    Function to run the model with given parameter values
+    """
+    data = np.empty(len(param_values))
+    for index, params in enumerate(param_values):
+        new_constants = constants.copy()
+        for param_ind, param in enumerate(params):
+            new_constants[problem['names'][param_ind]] = param
+        output = run(new_constants, its, verbose=False)
+        SWB = extract_data(new_constants["N"], output, 1)
+        data[index] = np.mean(SWB[-1])
+    output_queue.put(data)
 
-def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type = "Normal"):
+def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type="Normal"):
     """
     Global Sensitivity Analysis
     """
@@ -22,20 +38,36 @@ def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type = "Normal")
 
     # Generate samples
     param_values = sample(problem, samples)
-    
-    data = np.empty(len(param_values))
-    for index, params in tqdm(enumerate(param_values)):
-        for param_ind, param in enumerate(params):
-            constants[parameters[param_ind]] = param
-        model = init_model(constants)
-        output = model.simulate(its, show_tqdm=False)
-        SWB = extract_data(constants["N"], output, 1)
-        data[index] = np.mean(SWB[-1])
-    
-    # dask.compute(data)
+
+    # Split param_values into chunks for multiprocessing
+    chunk_size = len(param_values) // multiprocessing.cpu_count()
+    param_chunks = [param_values[i:i + chunk_size] for i in range(0, len(param_values), chunk_size)]
+
+    # Create a multiprocessing Queue to collect results from worker processes
+    output_queue = multiprocessing.Queue()
+
+    # Create and start worker processes
+    processes = []
+    for param_chunk in param_chunks:
+        process = multiprocessing.Process(target=run_model, args=(param_chunk, constants, problem, its, output_queue))
+        processes.append(process)
+        process.start()
+
+    # Collect results from worker processes
+    results = []
+    for _ in range(len(param_chunks)):
+        results.append(output_queue.get())
+
+    # Join worker processes
+    for process in processes:
+        process.join()
+
+    # Combine results from all processes
+    data = np.concatenate(results)
+
     # Perform analysis
     if sa_type == "Normal":
-        Si = analyze(problem, data, print_to_console=True)
+        Si = sobol.analyze(problem, data, print_to_console=True)
     elif sa_type == "Pawn":
         Si = pawn.analyze(problem, param_values, data, S=10, print_to_console=False)
 
@@ -48,11 +80,11 @@ def LSA(constants, its, samples, parameters=[], bounds=[[]]):
     data = np.array((len(parameters), samples))
     for index, param in enumerate(parameters):
         param_values = np.linspace(bounds[index][0], bounds[index][1], samples)
+        new_constants = constants
         for i, value in enumerate(param_values):
-            constants[param] = value
-            model = init_model(constants)
-            output = model.simulate(its)
-            SWB = extract_data(constants["N"], output, 1)
+            new_constants[param] = value
+            output = run(new_constants, its, verbose=False)
+            SWB = extract_data(new_constants["N"], output, 1)
             data[index][i] = np.mean(SWB[-1])
 
     return data

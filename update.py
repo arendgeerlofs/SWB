@@ -22,7 +22,9 @@ def update_states(model):
     fin_hist, nonfin_hist, RFC_hist, SWB_hist = model.fin_hist, model.nonfin_hist, model.RFC_hist, model.SWB_hist
     N = model.constants['N']
     fin_sens, nonfin_sens = model.get_state("fin_sens"), model.get_state("nonfin_sens")
+    new_fin_sens, new_nonfin_sens = fin_sens, nonfin_sens
     cur_it = len(model.simulation_output["states"])
+    RFC = model.get_state("RFC")
 
     # Dict to save param changes to
     param_chgs = {}
@@ -63,20 +65,20 @@ def update_states(model):
                 if p < fin_event_prob:
                     event = np.random.normal(0, event_size)
                     fin[node] += event
-                    fin_sens[node] = calc_sens([fin_sens[node]], [sens[node]], [desens[node]], [event], type="fin")
+                    new_fin_sens[node] = calc_sens([new_fin_sens[node]], [sens[node]], [desens[node]], [event], type="fin")
         # Non financial event
         else:
             for node, p in enumerate(event_probs):
                 if p < nonfin_event_prob:
                     event = np.random.normal(0, event_size)
                     nonfin[node] += event
-                    nonfin_sens[node] = calc_sens([nonfin_sens[node]], [sens[node]], [desens[node]], [event], type="nonfin")
+                    new_nonfin_sens[node] = calc_sens([new_nonfin_sens[node]], [sens[node]], [desens[node]], [event], type="nonfin")
 
     # Periodic financial interventions occurs
     rec_int_size = model.constants["rec_intervention_size"]
     if cur_it % model.constants["intervention_gap"] == 0:
         fin += rec_int_size
-        fin_sens = calc_sens(fin_sens, sens, desens, np.repeat(rec_int_size, N), type="fin")
+        new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(rec_int_size, N), type="fin")
 
     # Set interventions occur
     int_ts = model.constants["int_ts"]
@@ -87,10 +89,10 @@ def update_states(model):
             int_event = int_size[int_index]
             if int_type[int_index] == "fin":
                 fin += int_event
-                fin_sens = calc_sens(fin_sens, sens, desens, np.repeat(int_event, N), type="fin")
+                new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(int_event, N), type="fin")
             elif int_type[int_index] == "nonfin":
                 nonfin += int_event
-                nonfin_sens = calc_sens(nonfin_sens, sens, desens, np.repeat(int_event, N), type="nonfin")
+                new_nonfin_sens = calc_sens(new_nonfin_sens, sens, desens, np.repeat(int_event, N), type="nonfin")
 
     fin = np.maximum(fin, 1)
     nonfin = np.maximum(nonfin, 1)
@@ -104,15 +106,19 @@ def update_states(model):
     fin_rel = fin / fin_exp
     nonfin_rel = nonfin / nonfin_exp
 
+    # Calculate sensitivity factor
+    fin_sens_factor = (1/0.693147180560) * np.log(fin_sens+1)
+    nonfin_sens_factor = (1/0.693147180560) * np.log(nonfin_sens+1)
+
     # Change SWB based on Range-Frequency comparison and financial stock
     # SWB change based on system dynamics paper
     # Divided by 2 since 2 factors now instead of 1
-    RFC_SWB_change = 0.5 * ((1/0.693147180560) * np.log(RFC_rel+1)-1)
-    fin_SWB_change = 0.5 * ((1/0.693147180560) * np.log(fin_rel+1)-1)
-    total_fin_change = RFC_SWB_change + fin_SWB_change * fin_sens
-
+    RFC_SWB_change = 1 * ((1/0.693147180560) * np.log(RFC_rel+1)-1)
+    fin_SWB_change = 1 * ((1/0.693147180560) * np.log(fin_rel+1)-1)
+    total_fin_change = RFC_SWB_change + fin_SWB_change * fin_sens_factor
+    
     # SWB change based on system dynamics paper
-    nonfin_change = ((1/0.693147180560)*np.log(nonfin_rel+1)-1) * nonfin_sens
+    nonfin_change = ((1/0.693147180560)*np.log(nonfin_rel+1)-1) * nonfin_sens_factor
 
     # Total change is bounded
     SWB = np.clip(SWB_norm + total_fin_change + nonfin_change, 0, 10)
@@ -123,8 +129,8 @@ def update_states(model):
     param_chgs["nonfin"] = nonfin
 
     # Save sensitivity values
-    param_chgs["fin_sens"] = fin_sens
-    param_chgs["nonfin_sens"] = nonfin_sens
+    param_chgs["fin_sens"] = new_fin_sens
+    param_chgs["nonfin_sens"] = new_nonfin_sens
 
     # Calculate and save community SWB
     # TODO fix averge community SWB

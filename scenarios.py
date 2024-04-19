@@ -2,7 +2,7 @@
 Intervention and event scenarios for which to run the model and plot outcomes
 """
 
-scenarios = {"All":{"fin_event_prob": 0.05,
+scenarios = {"Combination":{"fin_event_prob": 0.05,
                         "nonfin_event_prob": 0.05,
                         "rec_intervention_size" : 1,
                         "intervention_gap" : 10,
