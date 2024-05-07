@@ -7,8 +7,8 @@ from SALib.analyze import pawn
 from SALib.sample.sobol import sample
 from SALib.sample import saltelli
 from functions import extract_data
-from model import init_model, run
-import dask
+from model import init_model
+from run_functions import run_exec
 
 def run_model(param_values, constants, problem, its, output_queue):
     """
@@ -19,7 +19,7 @@ def run_model(param_values, constants, problem, its, output_queue):
         new_constants = constants.copy()
         for param_ind, param in enumerate(params):
             new_constants[problem['names'][param_ind]] = param
-        output = run(new_constants, its, verbose=False)
+        output = run_exec(new_constants, its, verbose=False)
         SWB = extract_data(new_constants["N"], output, 1)
         data[index] = np.mean(SWB[-1])
     output_queue.put(data)
@@ -83,7 +83,7 @@ def LSA(constants, its, samples, parameters=[], bounds=[[]]):
         new_constants = constants
         for i, value in enumerate(param_values):
             new_constants[param] = value
-            output = run(new_constants, its, verbose=False)
+            output = exec(new_constants, its, verbose=False)
             SWB = extract_data(new_constants["N"], output, 1)
             data[index][i] = np.mean(SWB[-1])
 

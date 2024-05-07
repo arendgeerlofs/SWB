@@ -1,21 +1,19 @@
 import networkx as nx
 import numpy as np
-from functions import calc_RFC, SDA_prob
+from functions import calc_RFC, SDA_prob, distance, calc_soc_cap
 from scipy.spatial.distance import cdist
 
 # TODO social distance attachment
-def init_network(size=100, net_type="Rd", p=0.5, m=5, alpha=0.3, beta=0.5, fin=0, nonfin=0):
+def init_network(size=100, net_type="Rd", p=0.5, m=5, alpha=0.3, beta=0.5, fin=0, nonfin=0, SWB=0):
     if net_type == "BA":
         return nx.barabasi_albert_graph(size, m)
     elif net_type == "Rd":
         return nx.erdos_renyi_graph(size, p)
     elif net_type == "SDA":
         g = nx.Graph()
-        g.add_nodes_from([i for i in range(100)])
+        g.add_nodes_from([i for i in range(size)])
 
-        fin = fin.reshape(size, 1)
-        nonfin = nonfin.reshape(size, 1)
-        dist = cdist(fin, fin, metric='euclidean')
+        dist = distance(fin, nonfin, SWB, size)
         probs = SDA_prob(dist, alpha, beta)
 
         adj_mat = np.random.binomial(size=np.shape(probs), n=1, p=probs)
@@ -31,17 +29,17 @@ def init_network(size=100, net_type="Rd", p=0.5, m=5, alpha=0.3, beta=0.5, fin=0
         print("Options are 'BA', 'Rd' and 'SDA'")
 
 def initial_SWB_norm(model):
-    "Randomly initialise SWB using the normal distribution"
-    return np.clip(np.random.normal(model.constants["SWB_mu"], model.constants["SWB_sd"], model.constants['N']), 0, 10)
+    return model.init_SWB
+#     "Randomly initialise SWB using the normal distribution"
+#     return np.clip(np.random.normal(model.constants["SWB_mu"], model.constants["SWB_sd"], model.constants['N']), 0, 10)
 
 def initial_SWB(model):
     "Set initial SWB equal to norm"
-    return model.get_state("SWB_norm")
+    return model.init_SWB
 
 def initial_hab(model):
     "Set initial habituation, lower numbers mean faster habituation"
     return np.random.uniform(0, model.constants["hist_len"], model.constants['N'])
-
 
 def initial_Likert(model):
     "Randomly initialise Likert-type properties using uniform distribution"
@@ -68,6 +66,10 @@ def initial_expected_RFC(model):
     "Initialise expected values based on actual initial value"
     return model.get_state("RFC")
 
+def initial_expected_soc_cap(model):
+    "Initialise expected values based on actual initial value"
+    return model.get_state("soc_cap")
+
 def initial_fin_hist(model):
     "Initialise history of financial stock equal to current stock for history length of time steps"
     return model.get_state("financial").reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
@@ -79,6 +81,10 @@ def initial_nonfin_hist(model):
 def initial_RFC_hist(model, RFC):
     "Initialise history of RFC stock equal to current stock for history length of time steps"
     return RFC.reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
+
+def initial_soc_cap_hist(model, soc_cap):
+    "Initialise history of RFC stock equal to current stock for history length of time steps"
+    return soc_cap.reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
 
 def initial_SWB_hist(model):
     "Initialise history of SWB equal to current stock for history length of time steps"
@@ -97,6 +103,9 @@ def init_fin(model):
 
 def init_nonfin(model):
     return model.init_nonfin
+
+def initial_soc_cap(model):
+    return calc_soc_cap(model)
 
 init_states = {
     # The goal
@@ -126,6 +135,11 @@ init_states = {
     # Social comparison
     'RFC': initial_RFC,
     'RFC_exp': initial_expected_RFC,
+
+    # Social capital
+    'soc_cap': initial_soc_cap,
+    'soc_cap_exp': initial_expected_soc_cap,
 }
+
 
 

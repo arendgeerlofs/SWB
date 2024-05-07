@@ -17,21 +17,21 @@ params = {
     "SWB_mu" : 7,
     "SWB_sd" : 2,
     # Event size
-    "fin_event_prob": 0.00,
-    "nonfin_event_prob": 0.00,
+    "fin_event_prob": 0.05,
+    "nonfin_event_prob": 0.05,
     "event_size" : 1,
     # Parameter indicating change of model during simulations
     "upd_net" : True,
     # Pulse intervention size
     "rec_intervention_size" : 0,
-    "intervention_gap" : 10,
+    "intervention_gap" : 3,
     # Set intervention
-    "int_ts": [10, 10],
+    "int_ts": [],
     "int_size": [1, 1],
     "int_var": ["fin", "nonfin"],
     # History length
     "hist_len" : 10,
     # Feedback parameters
-    "fb_fin": 0.0,
-    "fb_nonfin": 0.0,
+    "fb_fin": 0.1,
+    "fb_nonfin": 0.3,
 }
