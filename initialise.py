@@ -13,7 +13,7 @@ def init_network(size=100, net_type="Rd", p=0.5, m=5, alpha=0.3, beta=0.5, fin=0
         g = nx.Graph()
         g.add_nodes_from([i for i in range(size)])
 
-        dist = distance(fin, nonfin, SWB, size)
+        dist = distance(fin, nonfin, SWB)
         probs = SDA_prob(dist, alpha, beta)
 
         adj_mat = np.random.binomial(size=np.shape(probs), n=1, p=probs)

@@ -5,8 +5,8 @@ from functions import extract_data
 import numpy as np
 
 
-def run_exec(constants, iterations, verbose=True):
-    model = init_model(constants)
+def run_exec(constants, iterations, init_fin=False, init_nonfin=False, init_SWB=False, verbose=True):
+    model = init_model(constants, init_fin, init_nonfin, init_SWB)
     output = run_model(model, iterations, verbose)
     return output
 

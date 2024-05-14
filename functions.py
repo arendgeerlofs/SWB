@@ -22,7 +22,7 @@ def calc_RFC(model):
             RFC_cur[node] = soc_w[node] * R_i + (1-soc_w[node])*F_i
     return 10* RFC_cur
 
-def distance(fin, nonfin, SWB, N):
+def distance(fin, nonfin, SWB):
     character = np.column_stack((fin, nonfin, SWB))
     dist = cdist(character, character, metric='euclidean')
     return dist
@@ -32,10 +32,10 @@ def calc_soc_cap(model):
     fin = model.get_state("financial").reshape(N, 1)
     nonfin = model.get_state("nonfin").reshape(N, 1)
     SWB = model.get_state("SWB").reshape(N, 1)
-    dist = distance(fin, nonfin, SWB, N)
+    dist = distance(fin, nonfin, SWB)
     likeness = 1 - normalize(dist, norm="max", axis=1)
     adj_mat = model.get_adjacency()
-    return np.maximum(np.mean(likeness * adj_mat, axis=1), 0.01)
+    return np.maximum(np.mean(likeness * adj_mat, axis=1), 0.0001)
 
 def SDA_prob(dist, alpha, beta):
     return 1 / (1+(beta**(-1)*dist)**alpha)
@@ -49,15 +49,15 @@ def extract_data(nodes, output, state_number):
         data[timestep] = output["states"][timestep][:, state_number]
     return data
 
-def calc_sens(sens, sens_factor, desens_factor, event_change, type="fin"):
+def calc_sens(sens, sens_factor, desens_factor, event_change, mode="fin"):
     new_sens = np.empty(len(sens))
     for node, value in enumerate(sens):
-        if type == "fin":
+        if mode == "fin":
             if event_change[node] > 0:
                 new_sens[node] = value / (1 + ((sens_factor[node] * event_change[node]) / 10))
             else:
                 new_sens[node] = value * (1 + (-(desens_factor[node] * event_change[node]) / 10))
-        elif type == "nonfin":
+        elif mode == "nonfin":
             if event_change[node] > 0:
                 new_sens[node] = value * (1 + ((sens_factor[node] * event_change[node]) / 10))
             else:

@@ -1,17 +1,8 @@
 import numpy as np
-from dynsimf.models.components.conditions.Condition import ConditionType
-from dynsimf.models.components.conditions.StochasticCondition import StochasticCondition
-from functions import calc_RFC, SDA_prob, calc_sens, distance, calc_soc_cap
 import scipy.ndimage as ndimage
-from scipy.spatial.distance import cdist
-from scipy.stats import genextreme
 from sklearn.preprocessing import normalize
-from SDA import SDA
+from functions import calc_RFC, SDA_prob, calc_sens, distance, calc_soc_cap
 
-# Update conditions
-update_conditions = {
-    "Network" : StochasticCondition(ConditionType.STATE, 0.1),
-}
 def update_states(model):
     """
     Function that updates the states each iteration
@@ -27,7 +18,7 @@ def update_states(model):
     fin_sens, nonfin_sens = model.get_state("fin_sens"), model.get_state("nonfin_sens")
     new_fin_sens, new_nonfin_sens = fin_sens, nonfin_sens
     cur_it = len(model.simulation_output["states"])
-    RFC, soc_cap = model.get_state("RFC"), model.get_state("soc_cap")
+    soc_cap = model.get_state("soc_cap")
 
     # Dict to save param changes to
     param_chgs = {}
@@ -57,6 +48,7 @@ def update_states(model):
     event_size = model.constants["event_size"]
     fin_event_prob = model.constants["fin_event_prob"]
     nonfin_event_prob = model.constants["nonfin_event_prob"]
+    soc_cap_base, soc_cap_inf = model.constants["soc_cap_base"], model.constants["soc_cap_inf"]
     sens, desens = model.get_state('sensitisation'), model.get_state('desensitisation')
 
     # Calculate chance of events occuring per node
@@ -68,24 +60,32 @@ def update_states(model):
         if event_type == 0:
             for node, p in enumerate(event_probs):
                 if p < fin_event_prob:
-                    # event = genextreme.rvs(1, loc=event_size, scale=event_size, size=1)
                     event = np.random.normal(0, event_size)
-                    fin[node] += event
-                    new_fin_sens[node] = calc_sens([new_fin_sens[node]], [sens[node]], [desens[node]], [event], type="fin")
+                    if event < 0:
+                        fin[node] += event / ((soc_cap[node]/soc_cap_base) * soc_cap_inf)
+                    else:
+                        fin[node] += event
+                    new_fin_sens[node] = calc_sens([new_fin_sens[node]], [sens[node]], [desens[node]], [event], mode="fin")
         # Non financial event
         else:
             for node, p in enumerate(event_probs):
                 if p < nonfin_event_prob:
-                    # event = genextreme.rvs(1, loc=event_size, scale=event_size)
                     event = np.random.normal(0, event_size)
-                    nonfin[node] += event
-                    new_nonfin_sens[node] = calc_sens([new_nonfin_sens[node]], [sens[node]], [desens[node]], [event], type="nonfin")
+                    if event < 0:
+                        nonfin[node] += event / ((soc_cap[node]/soc_cap_base) * soc_cap_inf)
+                    else:
+                        nonfin[node] += event
+                    new_nonfin_sens[node] = calc_sens([new_nonfin_sens[node]], [sens[node]], [desens[node]], [event], mode="nonfin")
 
     # Periodic financial interventions occurs
     rec_int_size = model.constants["rec_intervention_size"]
     if cur_it % model.constants["intervention_gap"] == 0:
         fin += rec_int_size
-        new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(rec_int_size, N), type="fin")
+        if rec_int_size < 0:
+            fin += rec_int_size / ((soc_cap/soc_cap_base) * soc_cap_inf)
+        else:
+            fin += rec_int_size
+        new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(rec_int_size, N), mode="fin")
 
     # Set interventions occur
     int_ts = model.constants["int_ts"]
@@ -95,11 +95,17 @@ def update_states(model):
         if cur_it == ts:
             int_event = int_size[int_index]
             if int_type[int_index] == "fin":
-                fin += int_event
-                new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(int_event, N), type="fin")
+                if int_event < 0:
+                    fin += int_event / ((soc_cap/soc_cap_base) * soc_cap_inf)
+                else:
+                    fin += int_event
+                new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(int_event, N), mode="fin")
             elif int_type[int_index] == "nonfin":
-                nonfin += int_event
-                new_nonfin_sens = calc_sens(new_nonfin_sens, sens, desens, np.repeat(int_event, N), type="nonfin")
+                if int_event < 0:
+                    nonfin += int_event / ((soc_cap/soc_cap_base) * soc_cap_inf)
+                else:
+                    nonfin += int_event
+                new_nonfin_sens = calc_sens(new_nonfin_sens, sens, desens, np.repeat(int_event, N), mode="nonfin")
 
     fin = np.maximum(fin, 1)
     nonfin = np.maximum(nonfin, 1)
@@ -116,7 +122,7 @@ def update_states(model):
     fin_rel = fin / fin_exp
     nonfin_rel = nonfin / nonfin_exp
     RFC_rel = RFC_cur / RFC_exp
-    soc_cap_rel = soc_cap / soc_cap_exp
+    soc_cap_rel = soc_cap_cur / soc_cap_exp
     
     # Calculate sensitivity factor
     fin_sens_factor = (1/np.log(2)) * np.log(fin_sens+1)
@@ -171,7 +177,7 @@ def update_network(nodes, model):
     nonfin = model.get_state("nonfin").reshape(N, 1)
     SWB = model.get_state("SWB").reshape(N, 1)
 
-    dist = distance(fin, nonfin, SWB, N)
+    dist = distance(fin, nonfin, SWB)
     probs = SDA_prob(dist, alpha, model.constants["beta"])
     matrix_size = np.shape(probs)
 

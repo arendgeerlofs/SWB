@@ -7,19 +7,19 @@ from SALib.analyze import pawn
 from SALib.sample.sobol import sample
 from SALib.sample import saltelli
 from functions import extract_data
-from model import init_model
 from run_functions import run_exec
 
-def run_model(param_values, constants, problem, its, output_queue):
+def run_model(param_values, constants, problem, its, inits, output_queue):
     """
     Function to run the model with given parameter values
     """
     data = np.empty(len(param_values))
+    init_fin, init_nonfin, init_SWB = inits
     for index, params in enumerate(param_values):
         new_constants = constants.copy()
         for param_ind, param in enumerate(params):
             new_constants[problem['names'][param_ind]] = param
-        output = run_exec(new_constants, its, verbose=False)
+        output = run_exec(new_constants, its, init_fin, init_nonfin, init_SWB, verbose=False)
         SWB = extract_data(new_constants["N"], output, 1)
         data[index] = np.mean(SWB[-1])
     output_queue.put(data)
@@ -36,6 +36,12 @@ def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type="Normal"):
         'bounds': bounds
     }
 
+    # Create initial values
+    init_fin = np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
+    init_nonfin = np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
+    init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0, 10)
+    inits = (init_fin, init_nonfin, init_SWB)
+
     # Generate samples
     param_values = sample(problem, samples)
 
@@ -49,7 +55,7 @@ def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type="Normal"):
     # Create and start worker processes
     processes = []
     for param_chunk in param_chunks:
-        process = multiprocessing.Process(target=run_model, args=(param_chunk, constants, problem, its, output_queue))
+        process = multiprocessing.Process(target=run_model, args=(param_chunk, constants, problem, its, inits, output_queue))
         processes.append(process)
         process.start()
 

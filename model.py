@@ -1,14 +1,20 @@
 import numpy as np
 
 from dynsimf.models.Model import Model
+from dynsimf.models.components.conditions.Condition import ConditionType
+from dynsimf.models.components.conditions.StochasticCondition import StochasticCondition
 from initialise import init_states, init_network, initial_fin_hist, initial_RFC_hist, initial_SWB_hist, initial_nonfin_hist, initial_soc_cap_hist
-from update import update_conditions, update_states, update_network
+from update import update_states, update_network
 
-def init_model(constants):
+
+def init_model(constants, init_fin=False, init_nonfin=False, init_SWB=False):
     # Create values for fin and nonfin that are used in SDA distance
-    init_fin = np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
-    init_nonfin = np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
-    init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0, 10)
+    if not type(init_fin) is np.ndarray:
+        init_fin = np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
+    if not type(init_nonfin) is np.ndarray:
+        init_nonfin = np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
+    if not type(init_SWB) is np.ndarray:
+        init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0, 10)
 
     # Create network
     network = init_network(constants["N"], constants["type"],
@@ -39,6 +45,10 @@ def init_model(constants):
     model.soc_cap_hist = initial_soc_cap_hist(model, model.get_state("soc_cap"))
     model.SWB_hist = initial_SWB_hist(model)
 
+
+    update_conditions = {
+        "Network" : StochasticCondition(ConditionType.STATE, 0.1),
+    }
 
     # Update states
     model.add_update(update_states, {"model":model})
