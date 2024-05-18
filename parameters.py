@@ -26,6 +26,7 @@ params = {
 
     # Parameter indicating change of model during simulations
     "upd_net" : True,  # Boolean to indicate if the network should be updated during simulations.
+    "net_upd_freq" : 0.1, # Probability of network update occurring.
 
     # Pulse intervention size
     "burn_in_period" : 100,  # Initial period without interventions to allow the model to stabilize.

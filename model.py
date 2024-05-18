@@ -62,7 +62,7 @@ def init_model(constants, init_fin=False, init_nonfin=False, init_SWB=False):
 
     # Define conditions for updating the network
     update_conditions = {
-        "Network": StochasticCondition(ConditionType.STATE, 0.1),
+        "Network": StochasticCondition(ConditionType.STATE, model.constants["net_upd_freq"]),
     }
 
     # Add state update function to the model
