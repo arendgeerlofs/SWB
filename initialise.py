@@ -3,8 +3,23 @@ import numpy as np
 from functions import calc_RFC, SDA_prob, distance, calc_soc_cap
 from scipy.spatial.distance import cdist
 
-# TODO social distance attachment
+# Initialize the network based on different types
 def init_network(size=100, net_type="Rd", p=0.5, m=5, alpha=0.3, beta=0.5, fin=0, nonfin=0, SWB=0):
+    """
+    Initialize a network based on the specified type.
+    
+    Parameters:
+    - size (int): Number of nodes in the network.
+    - net_type (str): Type of network ('BA' for Barabási-Albert, 'Rd' for Erdős-Rényi, 'SDA' for Social Distance Attachment).
+    - p (float): Probability for edge creation in Erdős-Rényi graph.
+    - m (int): Number of edges to attach from a new node to existing nodes in Barabási-Albert graph.
+    - alpha (float): Parameter for the Social Distance Attachment probability calculation.
+    - beta (float): Parameter for the Social Distance Attachment probability calculation.
+    - fin, nonfin, SWB: Attributes used for distance calculation in the Social Distance Attachment model.
+    
+    Returns:
+    - NetworkX graph: Initialized network.
+    """
     if net_type == "BA":
         return nx.barabasi_albert_graph(size, m)
     elif net_type == "Rd":
@@ -17,9 +32,7 @@ def init_network(size=100, net_type="Rd", p=0.5, m=5, alpha=0.3, beta=0.5, fin=0
         probs = SDA_prob(dist, alpha, beta)
 
         adj_mat = np.random.binomial(size=np.shape(probs), n=1, p=probs)
-        network_update = {}
         for node, row in enumerate(adj_mat):
-            network_update[node] = {"add": []}
             for neighbor, value in enumerate(row):
                 if value == 1 and node != neighbor:
                     g.add_edge(node, neighbor)
@@ -29,15 +42,15 @@ def init_network(size=100, net_type="Rd", p=0.5, m=5, alpha=0.3, beta=0.5, fin=0
         print("Options are 'BA', 'Rd' and 'SDA'")
 
 def initial_SWB_norm(model):
+    "Set initial SWB equal to previously initialised values"
     return model.init_SWB
-#     "Randomly initialise SWB using the normal distribution"
-#     return np.clip(np.random.normal(model.constants["SWB_mu"], model.constants["SWB_sd"], model.constants['N']), 0, 10)
 
 def initial_SWB(model):
-    "Set initial SWB equal to norm"
+    "Set initial SWB equal to previously initialised values"
     return model.init_SWB
 
 def initial_hab(model):
+    # return np.full(model.constants["N"], model.constants["hist_len"])
     "Set initial habituation, lower numbers mean faster habituation"
     return np.random.uniform(0, model.constants["hist_len"], model.constants['N'])
 
@@ -55,7 +68,6 @@ def initial_expected_nonfin(model):
 
 def initial_RFC(model):
     "Set initial RFC to actual RFC based on the initial financial statuses and social connections"
-    # return np.ones(100)
     return calc_RFC(model)
 
 def initial_expected_SWB(model):
@@ -93,18 +105,22 @@ def initial_SWB_hist(model):
 def initial_SWB_comm(model):
     "Initialise expected values based on actual initial value"
     # return np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
-    return model.get_state("RFC")
+    return np.full(model.constants["N"], 7)
 
 def initial_sens(model):
+    "Initialise (de)sensitivity scalar"
     return np.ones(model.constants["N"])
 
 def init_fin(model):
+    "Initialise financial state equal to previously initialised values"
     return model.init_fin
 
 def init_nonfin(model):
+    "Initialise non_financial state equal to previously initialised values"
     return model.init_nonfin
 
 def initial_soc_cap(model):
+    "Initialise social capital using the social capital function"
     return calc_soc_cap(model)
 
 init_states = {

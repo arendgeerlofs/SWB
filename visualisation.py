@@ -22,6 +22,19 @@ def visualise(model, output):
     model.configure_visualization(visualization_config, output)
     model.visualize('animation')
 
+def plot_stoch_param(data, param_name, param_steps):
+    for index, param_step in enumerate(data):
+        stds = np.std(param_step, axis=0)
+        means = np.mean(param_step, axis=0)
+        plt.fill_between(np.linspace(0, len(means), len(means)), means-stds, means+stds, alpha=0.1)
+        plt.plot(means, linestyle='-', marker='.', label=f"{param_name}: {param_steps[index]}")
+    plt.title(f"{param_name}")
+    plt.xlabel("Iteration")
+    plt.ylabel("Average SWB")
+    plt.legend()
+    plt.savefig(f"figures/stoch_plots/{param_name}")
+    plt.clf()
+
 def plot_avg(output, columns_to_plot= ["SWB", "SWB_exp", "financial", "fin_exp", "nonfin", "nonfin_exp", "soc_cap", "soc_cap_exp"], plot_from=0, name_addition="avgs"):
     arrays = [output['states'][key] for key in output['states']]
     data = np.stack(arrays, axis=0)

@@ -1,17 +1,25 @@
 import numpy as np
 from tqdm import tqdm
 import multiprocessing
-from SALib.analyze import sobol
-from SALib.analyze.sobol import analyze
-from SALib.analyze import pawn
+from SALib.analyze import sobol, pawn
 from SALib.sample.sobol import sample
-from SALib.sample import saltelli
-from functions import extract_data
+from functions import extract_data, init_ind_params
 from run_functions import run_exec
 
 def run_model(param_values, constants, problem, its, inits, output_queue):
     """
-    Function to run the model with given parameter values
+    Run the model with given parameter values and collect results.
+
+    Parameters:
+    - param_values (ndarray): Array of parameter values for the simulation runs.
+    - constants (dict): Dictionary of model constants.
+    - problem (dict): Dictionary defining the problem for sensitivity analysis.
+    - its (int): Number of iterations to run the model.
+    - inits (tuple): Initial values for financial, non-financial, and SWB states.
+    - output_queue (multiprocessing.Queue): Queue to store results from the model runs.
+
+    This function updates the model constants with new parameter values, runs the model, 
+    extracts the SWB data, calculates the mean SWB at the last timestep, and stores the results in the output queue.
     """
     data = np.empty(len(param_values))
     init_fin, init_nonfin, init_SWB = inits
@@ -26,9 +34,22 @@ def run_model(param_values, constants, problem, its, inits, output_queue):
 
 def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type="Normal"):
     """
-    Global Sensitivity Analysis
-    """
+    Global Sensitivity Analysis (GSA) using Sobol or Pawn methods.
 
+    Parameters:
+    - constants (dict): Dictionary of model constants.
+    - its (int): Number of iterations to run the model.
+    - samples (int): Number of samples for the sensitivity analysis.
+    - parameters (list): List of parameter names to be analyzed.
+    - bounds (list): List of bounds for each parameter.
+    - sa_type (str): Type of sensitivity analysis ('Normal' for Sobol, 'Pawn' for PAWN).
+
+    Returns:
+    - Si (dict): Sensitivity indices calculated by the chosen sensitivity analysis method.
+
+    This function defines the problem, initializes parameters, generates samples,
+    runs the model using multiprocessing, and performs the chosen sensitivity analysis.
+    """
     # Define the model inputs
     problem = {
         'num_vars': len(parameters),
@@ -37,10 +58,7 @@ def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type="Normal"):
     }
 
     # Create initial values
-    init_fin = np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
-    init_nonfin = np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
-    init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0, 10)
-    inits = (init_fin, init_nonfin, init_SWB)
+    inits = init_ind_params(constants)
 
     # Generate samples
     param_values = sample(problem, samples)
@@ -80,8 +98,21 @@ def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type="Normal"):
     return Si
 
 def LSA(constants, its, samples, parameters=[], bounds=[[]]):
-    """"
-    Local Sensitivity analysis using OFAT
+    """
+    Local Sensitivity Analysis (LSA) using One-Factor-At-a-Time (OFAT) method.
+
+    Parameters:
+    - constants (dict): Dictionary of model constants.
+    - its (int): Number of iterations to run the model.
+    - samples (int): Number of samples for the sensitivity analysis.
+    - parameters (list): List of parameter names to be analyzed.
+    - bounds (list): List of bounds for each parameter.
+
+    Returns:
+    - data (ndarray): Array of results from the sensitivity analysis.
+
+    This function performs local sensitivity analysis by varying one parameter at a time
+    within the specified bounds, running the model, and calculating the mean SWB at the last timestep.
     """
     data = np.array((len(parameters), samples))
     for index, param in enumerate(parameters):
