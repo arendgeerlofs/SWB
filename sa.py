@@ -21,15 +21,18 @@ def run_model(param_values, constants, problem, its, inits, output_queue):
     This function updates the model constants with new parameter values, runs the model, 
     extracts the SWB data, calculates the mean SWB at the last timestep, and stores the results in the output queue.
     """
+    param_int_list = ["N", "hist_len", "intervention_gap"]
     data = np.empty(len(param_values))
     init_fin, init_nonfin, init_SWB = inits
     for index, params in enumerate(param_values):
         new_constants = constants.copy()
         for param_ind, param in enumerate(params):
+            if problem['names'][param_ind] in param_int_list:
+                param = int(param)
             new_constants[problem['names'][param_ind]] = param
         output = run_exec(new_constants, its, init_fin, init_nonfin, init_SWB, verbose=False)
-        SWB = extract_data(new_constants["N"], output, 1)
-        data[index] = np.mean(SWB[-1])
+        SWB = extract_data( output, 1)
+        data[index] = np.mean(SWB[:-50])
     output_queue.put(data)
 
 def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type="Normal"):
@@ -121,7 +124,7 @@ def LSA(constants, its, samples, parameters=[], bounds=[[]]):
         for i, value in enumerate(param_values):
             new_constants[param] = value
             output = exec(new_constants, its, verbose=False)
-            SWB = extract_data(new_constants["N"], output, 1)
+            SWB = extract_data(output, 1)
             data[index][i] = np.mean(SWB[-1])
 
     return data

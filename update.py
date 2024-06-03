@@ -39,9 +39,9 @@ def update_states(model):
     param_chgs = {}
 
     # Feedback effect of SWB delta of last time step
-    SWB_delta = SWB - SWB_exp
-    fin += model.constants["fb_fin"] * SWB_delta
-    nonfin += model.constants["fb_nonfin"] * SWB_delta
+    SWB_rel = SWB / SWB_exp
+    fin *= 1 - (1 - SWB_rel) * model.constants["fb_fin"]
+    nonfin *= 1 - (1- SWB_rel) * model.constants["fb_nonfin"]
 
     # Calculate expected values based on previous iteration and smoothing function
     fin_exp, nonfin_exp, RFC_exp, soc_cap_exp, SWB_exp = np.empty(N), np.empty(N), np.empty(N), np.empty(N), np.empty(N)
@@ -71,58 +71,56 @@ def update_states(model):
     # Calculate chance of events occurring per node
     event_chances = np.random.uniform(0, 1, (2, N))
 
-    # Events happen
-    for event_type, event_probs in enumerate(event_chances):
-        if event_type == 0:  # Financial event
-            for node, p in enumerate(event_probs):
-                if p < fin_event_prob:
-                    event = np.random.normal(0, event_size)
-                    if event < 0:
-                        fin[node] += event / ((soc_cap[node] / soc_cap_base) * soc_cap_inf)
-                    else:
+
+    # Burn in period 
+    if cur_it > model.constants["burn_in_period"]:
+        # Events happen
+        for event_type, event_probs in enumerate(event_chances):
+            if event_type == 0:  # Financial event
+                for node, p in enumerate(event_probs):
+                    if p < fin_event_prob:
+                        event = np.random.normal(0, event_size)
+                        rel_chg = event / fin[node]
+                        if rel_chg < 0:
+                            rel_chg = 1 / (rel_chg - 1)
+                        else:
+                            rel_chg += 1
                         fin[node] += event
-                    new_fin_sens[node] = calc_sens([new_fin_sens[node]], [sens[node]], [desens[node]], [event], mode="fin")
-        else:  # Non-financial event
-            for node, p in enumerate(event_probs):
-                if p < nonfin_event_prob:
-                    event = np.random.normal(0, event_size)
-                    if event < 0:
-                        nonfin[node] += event / ((soc_cap[node] / soc_cap_base) * soc_cap_inf)
-                    else:
+                        new_fin_sens[node] = calc_sens([new_fin_sens[node]], [sens[node]], [desens[node]], np.array([rel_chg]), mode="fin")
+            else:  # Non-financial event
+                for node, p in enumerate(event_probs):
+                    if p < nonfin_event_prob:
+                        event = np.random.normal(0, event_size)
+                        rel_chg = event / nonfin[node]
+                        if rel_chg < 0:
+                            rel_chg = 1 / (rel_chg - 1)
+                        else:
+                            rel_chg += 1
                         nonfin[node] += event
-                    new_nonfin_sens[node] = calc_sens([new_nonfin_sens[node]], [sens[node]], [desens[node]], [event], mode="nonfin")
+                        new_nonfin_sens[node] = calc_sens([new_nonfin_sens[node]], [sens[node]], [desens[node]], np.array([rel_chg]), mode="nonfin")
 
-    # Periodic financial interventions occur
-    rec_int_size = model.constants["rec_intervention_size"]
-    if cur_it % model.constants["intervention_gap"] == 0 and cur_it > model.constants["burn_in_period"]:
-        if rec_int_size < 0:
-            fin *= rec_int_size / ((soc_cap / soc_cap_base) * soc_cap_inf)
-        else:
+        # Periodic financial interventions occur
+        rec_int_size = model.constants["rec_intervention_size"]
+        if (cur_it - model.constants["burn_in_period"]) % model.constants["intervention_gap"] == 0:
             fin *= rec_int_size
-        new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(rec_int_size, N), mode="fin")
+            new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(rec_int_size, N), mode="fin")
 
-    # Set interventions occur
-    int_ts = model.constants["int_ts"]
-    int_size = model.constants["int_size"]
-    int_type = model.constants["int_var"]
-    for int_index, ts in enumerate(int_ts):
-        if cur_it == ts:
-            int_event = int_size[int_index]
-            if int_type[int_index] == "fin":
-                if int_event < 0:
-                    fin += int_event / ((soc_cap / soc_cap_base) * soc_cap_inf)
-                else:
-                    fin += int_event
-                new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(int_event, N), mode="fin")
-            elif int_type[int_index] == "nonfin":
-                if int_event < 0:
-                    nonfin += int_event / ((soc_cap / soc_cap_base) * soc_cap_inf)
-                else:
-                    nonfin += int_event
-                new_nonfin_sens = calc_sens(new_nonfin_sens, sens, desens, np.repeat(int_event, N), mode="nonfin")
+        # Set interventions occur
+        int_ts = model.constants["int_ts"]
+        int_size = model.constants["int_size"]
+        int_type = model.constants["int_var"]
+        for int_index, ts in enumerate(int_ts):
+            if cur_it == ts:
+                int_event = int_size[int_index]
+                if int_type[int_index] == "fin":
+                    fin *= int_event
+                    new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(int_event, N), mode="fin")
+                elif int_type[int_index] == "nonfin":
+                    nonfin *= int_event
+                    new_nonfin_sens = calc_sens(new_nonfin_sens, sens, desens, np.repeat(int_event, N), mode="nonfin")
 
-    fin = np.maximum(fin, 1)
-    nonfin = np.maximum(nonfin, 1)
+    fin = np.maximum(fin, 0.001)
+    nonfin = np.maximum(nonfin, 0.001)
 
     # Calculate current RFC
     RFC_cur = calc_RFC(model)
@@ -132,6 +130,16 @@ def update_states(model):
     soc_cap_cur = calc_soc_cap(model)
     param_chgs["soc_cap"] = soc_cap_cur
 
+    for node_index in range(model.constants["N"]):
+        if fin_exp[node_index] == 0:
+            fin_exp[node_index] = 0.001
+        if nonfin_exp[node_index] == 0:
+            nonfin_exp[node_index] = 0.001
+        if RFC_exp[node_index] == 0:
+            RFC_exp[node_index] = 0.001
+        if soc_cap_exp[node_index] == 0:
+            soc_cap_exp[node_index] = 0.001
+    
     # Calculate relative values between previous state value and current expectation
     fin_rel = fin / fin_exp
     nonfin_rel = nonfin / nonfin_exp
@@ -139,21 +147,37 @@ def update_states(model):
     soc_cap_rel = soc_cap_cur / soc_cap_exp
     
     # Calculate sensitivity factor
-    fin_sens_factor = (1 / np.log(2)) * np.log(fin_sens + 1)
-    nonfin_sens_factor = (1 / np.log(2)) * np.log(nonfin_sens + 1)
-    
+    # fin_sens_factor = (1 / np.log(2)) * np.log(fin_sens + 1)
+    # nonfin_sens_factor = (1 / np.log(2)) * np.log(nonfin_sens + 1)
+
     # Change SWB based on Range-Frequency comparison and financial stock
     RFC_SWB_change = (1 / np.log(2)) * np.log(RFC_rel + 1) - 1
-    fin_SWB_change = (1 / np.log(2)) * np.log(fin_rel + 1) - 1 * fin_sens_factor
+    fin_SWB_change = ((1 / np.log(2)) * np.log(fin_rel + 1) - 1) * fin_sens
     total_fin_change = RFC_SWB_change + fin_SWB_change
 
     # SWB change based on system dynamics paper
     soc_cap_change = (1 / np.log(2)) * np.log(soc_cap_rel + 1) - 1
-    nonfin_change = (1 / np.log(2)) * np.log(nonfin_rel + 1) - 1 * nonfin_sens_factor
+    nonfin_change = ((1 / np.log(2)) * np.log(nonfin_rel + 1) - 1) * nonfin_sens
     total_nonfin_change = soc_cap_change + nonfin_change
+
+    # if cur_it >= 100:
+    #     print(f"-------{cur_it}-------")
+    #     print(cur_it % model.constants["intervention_gap"] == 0)
+    #     print(np.mean(fin_sens), np.mean(nonfin_sens))
+    #     print(np.mean(fin), np.mean(nonfin))
+    #     print(np.mean(fin_rel), np.mean(nonfin_rel))
+    #     print(np.mean(fin_SWB_change), np.mean(nonfin_change))
+    #     print(np.mean(total_fin_change), np.mean(total_nonfin_change))
+    #     print(np.mean(SWB_norm + total_fin_change + total_nonfin_change))
     
-    # Total change is bounded
-    SWB = np.clip(SWB_norm + total_fin_change + total_nonfin_change, 0, 10)
+    # Social resillience
+    SWB_change = total_fin_change + total_nonfin_change
+    for i, node_change in enumerate(SWB_change):
+        if node_change < 0:
+            SWB_change[i] = node_change / ((soc_cap[i] / soc_cap_base) * soc_cap_inf)
+
+    # Bound SWB
+    SWB = np.clip(SWB_norm + total_fin_change + total_nonfin_change, 0.001, 10)
 
     # Save new SWB, fin and nonfin values
     param_chgs["SWB"] = SWB

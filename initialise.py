@@ -25,13 +25,15 @@ def init_network(size=100, net_type="Rd", p=0.5, m=5, alpha=0.3, beta=0.5, fin=0
     elif net_type == "Rd":
         return nx.erdos_renyi_graph(size, p)
     elif net_type == "SDA":
+        seed = 105
+        rng = np.random.default_rng(seed)
         g = nx.Graph()
         g.add_nodes_from([i for i in range(size)])
 
         dist = distance(fin, nonfin, SWB)
         probs = SDA_prob(dist, alpha, beta)
 
-        adj_mat = np.random.binomial(size=np.shape(probs), n=1, p=probs)
+        adj_mat = rng.binomial(size=np.shape(probs), n=1, p=probs)
         for node, row in enumerate(adj_mat):
             for neighbor, value in enumerate(row):
                 if value == 1 and node != neighbor:
@@ -50,8 +52,8 @@ def initial_SWB(model):
     return model.init_SWB
 
 def initial_hab(model):
-    # return np.full(model.constants["N"], model.constants["hist_len"])
     "Set initial habituation, lower numbers mean faster habituation"
+    # return np.full(model.constants["N"], model.constants["hist_len"])
     return np.random.uniform(0, model.constants["hist_len"], model.constants['N'])
 
 def initial_Likert(model):
@@ -81,6 +83,13 @@ def initial_expected_RFC(model):
 def initial_expected_soc_cap(model):
     "Initialise expected values based on actual initial value"
     return model.get_state("soc_cap")
+
+def initial_sensitivity(model):
+    values = np.random.uniform(model.constants["L_low"], model.constants["L_high"], model.constants['N'])
+
+    # Scale to exponential scale between 0.5 and 2
+    base = (2 / 0.5) ** (1 / (10 - 0))
+    return 0.5 * base ** (values - 0)
 
 def initial_fin_hist(model):
     "Initialise history of financial stock equal to current stock for history length of time steps"
@@ -132,8 +141,8 @@ init_states = {
 
     # Adaptation properties
     'habituation': initial_hab,
-    'sensitisation': initial_Likert,
-    'desensitisation': initial_Likert,
+    'sensitisation': initial_sensitivity,
+    'desensitisation': initial_sensitivity,
 
     # # Personality traits
     'soc_w': initial_Likert,
@@ -156,6 +165,3 @@ init_states = {
     'soc_cap': initial_soc_cap,
     'soc_cap_exp': initial_expected_soc_cap,
 }
-
-
-

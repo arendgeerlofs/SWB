@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.animation as animation
+import seaborn as sns
 import pandas as pd
 from functions import extract_data
 from initialise import init_states
@@ -22,18 +23,56 @@ def visualise(model, output):
     model.configure_visualization(visualization_config, output)
     model.visualize('animation')
 
-def plot_stoch_param(data, param_name, param_steps):
+def plot_stoch_param(data, param_name, param_steps, intervention_timesteps, int_var, title_add=""):
+    line_color = "black"
+    colors = ['r', 'b', 'g', 'c', 'm', 'y', 'k', 'tab:orange', 'tab:brown', 'tab:pink', 'tab:gray']
+    plt.figure(figsize=(12,8))
     for index, param_step in enumerate(data):
         stds = np.std(param_step, axis=0)
         means = np.mean(param_step, axis=0)
-        plt.fill_between(np.linspace(0, len(means), len(means)), means-stds, means+stds, alpha=0.1)
-        plt.plot(means, linestyle='-', marker='.', label=f"{param_name}: {param_steps[index]}")
+        plt.fill_between(np.linspace(0, len(means), len(means)), means-stds, means+stds, color=colors[index], alpha=0.1)
+        plt.plot(means, linestyle='-', marker='.', label=f"{param_name}: {param_steps[index]:.2f}", color=colors[index])
+    for index, intervention in enumerate(intervention_timesteps):
+        if int_var[index] == "fin":
+            line_color = "green"
+        elif int_var[index] == "nonfin":
+            line_color = "blue"
+        plt.axvline(x=intervention, color=line_color, linestyle='--')
     plt.title(f"{param_name}")
     plt.xlabel("Iteration")
     plt.ylabel("Average SWB")
-    plt.legend()
-    plt.savefig(f"figures/stoch_plots/{param_name}")
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.savefig(f"figures/stoch_plots/{title_add}{param_name}/SWB", bbox_inches='tight')
     plt.clf()
+    return
+
+def plot_stoch_components(fin, exp_fin, nonfin, exp_nonfin, RFC, exp_RFC, soccap, exp_soccap, param_name, param_steps, intervention_timesteps, int_var, title_add=""):
+    line_color = "black"
+    title_names = ["fin", "nonfin", "RFC", "soccap"]
+    colors = ['r', 'b', 'g', 'c', 'm', 'y', 'k', 'tab:orange', 'tab:brown', 'tab:pink', 'tab:gray']
+    for index, data_tuple in enumerate([(fin, exp_fin), (nonfin, exp_nonfin), (RFC, exp_RFC), (soccap, exp_soccap)]):
+        plt.figure(figsize=(12,8))
+        for param_index, param_step in enumerate(data_tuple[0]):
+            stds = np.std(param_step, axis=0)
+            means = np.mean(param_step, axis=0)
+            exp_means = np.mean(data_tuple[1][param_index], axis=0)
+            plt.fill_between(np.linspace(0, len(means), len(means)), means-stds, means+stds, alpha=0.1, color=colors[param_index])
+            plt.plot(means, linestyle='-', marker='.', label=f"{param_name}: {param_steps[param_index]:.2f}", color=colors[param_index])
+            plt.plot(exp_means, linestyle='dashed', color=colors[param_index])
+        for intervention_index, intervention in enumerate(intervention_timesteps):
+            if int_var[intervention_index] == "fin":
+                line_color = "green"
+            elif int_var[intervention_index] == "nonfin":
+                line_color = "blue"
+            plt.axvline(x=intervention, color=line_color, linestyle='--')
+        plt.title(f"{title_names[index]} : {param_name}")
+        plt.xlabel("Iteration")
+        plt.ylabel(f"Average {title_names[index]}")
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.savefig(f"figures/stoch_plots/{title_add}{param_name}/{title_names[index]}", bbox_inches='tight')
+        plt.clf()
+        plt.close()
+    return
 
 def plot_avg(output, columns_to_plot= ["SWB", "SWB_exp", "financial", "fin_exp", "nonfin", "nonfin_exp", "soc_cap", "soc_cap_exp"], plot_from=0, name_addition="avgs"):
     arrays = [output['states'][key] for key in output['states']]
@@ -120,7 +159,7 @@ def plot_for_one(output, plot_from=0, name_addition="", states_to_plot=["SWB", "
     
 def SWB_gif(model, output, iterations, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
     # Get SWB data
-    data = extract_data(model.constants["N"], output, 1)
+    data = extract_data(output, 1)
     gif(data, iterations, fps, name=name, xlabel=xlabel, ylabel=ylabel, xlim=xlim)
 
 def gif(data, frames, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
@@ -148,3 +187,66 @@ def update_hist(num, data, xlabel, ylabel, xlim):
 #         for j in range(runs):
 #             output = exec(new_constants, its)
 #             run_data = 
+
+
+def plot_var(data, intervention_timesteps, int_var):
+    plt.figure(figsize=(12,8))
+    for run in data:
+        plt.plot(run)
+    for intervention_index, intervention in enumerate(intervention_timesteps):
+        if int_var[intervention_index] == "fin":
+            line_color = "green"
+        elif int_var[intervention_index] == "nonfin":
+            line_color = "blue"
+        plt.axvline(x=intervention, color=line_color, linestyle='--')
+    plt.title(f"Variance in SWB over time")
+    plt.xlabel("Iteration")
+    plt.ylabel(f"Variance")
+    plt.savefig(f"figures/var2")
+    plt.clf()
+    plt.close()
+
+    plt.figure(figsize=(12,8))
+    plt.plot(np.mean(data, axis=0))
+    mean = np.mean(data, axis=0)
+    std = np.std(data, axis=0)
+    plt.fill_between(np.linspace(0, len(mean), len(mean)), mean-std, mean+std, alpha=0.1)
+    for intervention_index, intervention in enumerate(intervention_timesteps):
+        if int_var[intervention_index] == "fin":
+            line_color = "green"
+        elif int_var[intervention_index] == "nonfin":
+            line_color = "blue"
+        plt.axvline(x=intervention, color=line_color, linestyle='--')
+    plt.title(f"Variance in SWB over time")
+    plt.xlabel("Iteration")
+    plt.ylabel(f"Variance")
+    plt.savefig(f"figures/var_avg2")
+    plt.clf()
+    plt.close()
+    return
+
+
+def two_var_heatmap(data, baseline, params, samples_1, samples_2, title_add=""):
+    data = np.mean(data, axis=2)
+    baseline = np.mean(baseline, axis=2)
+
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(data, annot=True, cmap="YlGnBu")
+    plt.title('Heatmap of mean SWB after intervention')
+    plt.xlabel(f'{params[1]}')
+    plt.ylabel(f'Mean {params[0]}')
+    plt.xticks(ticks=np.arange(len(samples_2)) + 0.5, labels=samples_2)
+    plt.yticks(ticks=np.arange(len(samples_1)) + 0.5, labels=samples_1/2)
+    plt.savefig(f"figures/heatmap{title_add}")
+    plt.clf()
+    plt.close()
+    sns.heatmap(data-baseline, annot=True, cmap="YlGnBu")
+    plt.title('Heatmap of SWB difference before -> after intervention')
+    plt.xlabel(f'{params[1]}')
+    plt.ylabel(f'Mean {params[0]}')
+    plt.xticks(ticks=np.arange(len(samples_2)) + 0.5, labels=samples_2)
+    plt.yticks(ticks=np.arange(len(samples_1)) + 0.5, labels=samples_1/2)
+    plt.savefig(f"figures/heatmap_diff{title_add}")
+    plt.clf()
+    plt.close()
+    return
