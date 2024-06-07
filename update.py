@@ -100,10 +100,10 @@ def update_states(model):
                         new_nonfin_sens[node] = calc_sens([new_nonfin_sens[node]], [sens[node]], [desens[node]], np.array([rel_chg]), mode="nonfin")
 
         # Periodic financial interventions occur
-        rec_int_size = model.constants["rec_intervention_size"]
+        rec_int_factor = model.constants["rec_intervention_factor"]
         if (cur_it - model.constants["burn_in_period"]) % model.constants["intervention_gap"] == 0:
-            fin *= rec_int_size
-            new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(rec_int_size, N), mode="fin")
+            fin *= rec_int_factor
+            new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(rec_int_factor, N), mode="fin")
 
         # Set interventions occur
         int_ts = model.constants["int_ts"]

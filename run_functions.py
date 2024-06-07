@@ -132,29 +132,28 @@ def run_two_var_heatmap(constants, runs, its, samples, params, bounds, title_add
 
     param_int_list = ["N", "hist_len", "intervention_gap"]
     init_fin, init_nonfin, init_SWB = init_ind_params(constants)
-    param_1_values = np.linspace(bounds[0][0], bounds[0][1], samples)
-    param_2_values = np.linspace(bounds[1][0], bounds[1][1], samples)
-
+    param_1_values = 2**np.linspace(bounds[0][0], bounds[0][1], samples[0]) * 0.5
+    param_2_values = np.linspace(bounds[1][0], bounds[1][1], samples[1])
+    print(param_1_values)
     # Create data arrays
-    SWB_data = np.empty((samples, samples, runs))
-    SWB_baseline = np.empty((samples, samples, runs))
-    chg_data = np.empty((samples, samples, runs))
+    SWB_data = np.empty((samples[0], samples[1], runs))
+    SWB_baseline = np.empty((samples[0], samples[1], runs))
+    chg_data = np.empty((samples[0], samples[1], runs))
 
     for i, param_1 in enumerate(param_1_values):
         new_constants = constants.copy()
-        if params[0] in param_int_list:
-            param_1 = int(param_1)
-        new_constants[params[0]] = param_1
+        if hist_gap_comb:
+            new_constants["intervention_gap"] = 4
+            new_constants["hist_len"] = int(param_1)
+        else:
+            if params[0] in param_int_list:
+                param_1 = int(param_1)
+            new_constants[params[0]] = param_1
         for j, param_2 in enumerate(param_2_values):
             print(f"---{i}------{j}--")
-            if hist_gap_comb:
-                new_constants["intervention_gap"] = 2
-                new_constants["hist_len"] = 2 * int(2 * param_2)
-            else:
-                if params[1] in param_int_list:
-                    param_2 = int(param_2)
-                new_constants[params[1]] = param_2
-
+            if params[1] in param_int_list:
+                param_2 = int(param_2)
+            new_constants[params[1]] = param_2
             for k in range(runs):
                 output = run_exec(new_constants, its, init_fin, init_nonfin, init_SWB)
                 SWB = extract_data(output, 1)
@@ -162,8 +161,11 @@ def run_two_var_heatmap(constants, runs, its, samples, params, bounds, title_add
                 SWB_baseline[i, j, k] = np.mean(np.mean(SWB, axis=1)[:new_constants["burn_in_period"]])
                 chg_data[i, j, k] = mean_chg(SWB, new_constants["burn_in_period"], per_agent=True)
     if hist_gap_comb:
-        title_add="_hist_comb"
+        title_add=f"{title_add}_hist_comb"
+    np.save("data/heatmap_SWB_data", SWB_data)
+    np.save("data/heatmap_SWB_baseline", SWB_baseline)
+    np.save("data/heatmap_chg_data", chg_data)
     two_var_heatmap(SWB_data, SWB_baseline, params, param_1_values, param_2_values, title_add=f"{title_add}")
-    two_var_heatmap(chg_data, SWB_baseline, params, param_1_values, param_2_values, title_add=f"_chg{title_add}")
+    two_var_heatmap(chg_data, SWB_baseline, params, param_1_values, param_2_values, title_add=f"_chg{title_add}", per_person=True)
     return
     

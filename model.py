@@ -27,7 +27,7 @@ def init_model(constants, init_fin=False, init_nonfin=False, init_SWB=False):
     if not isinstance(init_nonfin, np.ndarray):
         init_nonfin = np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
     if not isinstance(init_SWB, np.ndarray):
-        init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0, 10)
+        init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0.001, 10)
     
     # Initialize the network with the given parameters
     network = init_network(constants["N"], constants["type"],

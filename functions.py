@@ -149,7 +149,7 @@ def init_ind_params(constants):
     """
     init_fin = np.random.uniform(10, 100, constants['N'])
     init_nonfin = np.random.uniform(10, 100, constants['N'])
-    init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0, 10)
+    init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0.001, 10)
     return (init_fin, init_nonfin, init_SWB)
 
 def mean_chg(data, change_point, alpha=0.05, per_agent=False):
@@ -160,7 +160,7 @@ def mean_chg(data, change_point, alpha=0.05, per_agent=False):
     if per_agent:
         amount_changed = 0
         for agent in range(amount_agents):
-            segment_before, segment_after = data[:change_point][agent], data[change_point:][agent]
+            segment_before, segment_after = data[:change_point, agent], data[change_point:, agent]
             _, p_value = mannwhitneyu(segment_before, segment_after)
             if p_value <= alpha:
                 amount_changed += 1

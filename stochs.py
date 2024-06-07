@@ -14,7 +14,7 @@ param_dict = {
             # Parameter indicating change of model during simulations
             "net_upd_freq" :[0, 1],
             # Pulse intervention size
-            # "rec_intervention_size" : [0, 5],
+            # "rec_intervention_factor" : [0, 5],
             "intervention_gap" : [5, 35],
             # History length
             "hist_len" : [1, 21],

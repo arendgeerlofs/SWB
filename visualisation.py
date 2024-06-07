@@ -226,27 +226,35 @@ def plot_var(data, intervention_timesteps, int_var):
     return
 
 
-def two_var_heatmap(data, baseline, params, samples_1, samples_2, title_add=""):
+def two_var_heatmap(data, baseline, params, samples_1, samples_2, title_add="", per_person=False):
     data = np.mean(data, axis=2)
     baseline = np.mean(baseline, axis=2)
 
     plt.figure(figsize=(10, 8))
-    sns.heatmap(data, annot=True, cmap="YlGnBu")
-    plt.title('Heatmap of mean SWB after intervention')
-    plt.xlabel(f'{params[1]}')
-    plt.ylabel(f'Mean {params[0]}')
+    sns.heatmap(data, annot=True, cmap="YlGnBu", fmt=".2f")
+    if per_person:
+        plt.title('Proportion of agents for which SWB changed after intervention')
+    else:
+        plt.title('Mean SWB after intervention')
+    # plt.xlabel(f'{params[1]}')
+    # plt.ylabel(f'Mean {params[0]}')
+    plt.xlabel("Intervention factor")
+    plt.ylabel("Amount of interventions per habituation period")
     plt.xticks(ticks=np.arange(len(samples_2)) + 0.5, labels=samples_2)
-    plt.yticks(ticks=np.arange(len(samples_1)) + 0.5, labels=samples_1/2)
+    plt.yticks(ticks=np.arange(len(samples_1)) + 0.5, labels=samples_1)
     plt.savefig(f"figures/heatmap{title_add}")
     plt.clf()
     plt.close()
-    sns.heatmap(data-baseline, annot=True, cmap="YlGnBu")
-    plt.title('Heatmap of SWB difference before -> after intervention')
-    plt.xlabel(f'{params[1]}')
-    plt.ylabel(f'Mean {params[0]}')
-    plt.xticks(ticks=np.arange(len(samples_2)) + 0.5, labels=samples_2)
-    plt.yticks(ticks=np.arange(len(samples_1)) + 0.5, labels=samples_1/2)
-    plt.savefig(f"figures/heatmap_diff{title_add}")
-    plt.clf()
-    plt.close()
+    if not per_person:
+        sns.heatmap(data-baseline, annot=True, cmap="YlGnBu", fmt=".2f")
+        plt.title('Difference in SWB after and before intervention')
+        # plt.xlabel(f'{params[1]}')
+        # plt.ylabel(f'Mean {params[0]}')
+        plt.xlabel("Intervention factor")
+        plt.ylabel("Amount of interventions per habituation period")
+        plt.xticks(ticks=np.arange(len(samples_2)) + 0.5, labels=samples_2)
+        plt.yticks(ticks=np.arange(len(samples_1)) + 0.5, labels=samples_1)
+        plt.savefig(f"figures/heatmap_diff{title_add}")
+        plt.clf()
+        plt.close()
     return

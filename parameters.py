@@ -16,8 +16,8 @@ params = {
     "L_high" : 10,  # Upper bound of the Likert scale.
 
     # SWB initialization
-    "SWB_mu" : 7,  # Mean of the initial SWB (Subjective Well-Being) distribution.
-    "SWB_sd" : 2,  # Standard deviation of the initial SWB distribution.
+    "SWB_mu" : 5,  # Mean of the initial SWB (Subjective Well-Being) distribution.
+    "SWB_sd" : 1,  # Standard deviation of the initial SWB distribution.
 
     # Initial period to burn in the model
     "burn_in_period" : 100,  # Initial period without interventions to allow the model to stabilize.
@@ -32,7 +32,7 @@ params = {
     "net_upd_freq" : 0.1, # Probability of network update occurring.
 
     # Pulse intervention size
-    "rec_intervention_size" : 1.1,  # Factor of the recurring intervention.
+    "rec_intervention_factor" : 1,  # Factor of the recurring intervention.
     "intervention_gap" : 1000,  # Gap between recurring interventions.
 
     # Set intervention
@@ -44,8 +44,8 @@ params = {
     "hist_len" : 10,  # Length of the history for which past states are stored.
 
     # Feedback parameters
-    "fb_fin": 0.2,  # Feedback parameter for financial changes.
-    "fb_nonfin": 0.2,  # Feedback parameter for non-financial changes.
+    "fb_fin": 0.1,  # Feedback parameter for financial changes.
+    "fb_nonfin": 0.3,  # Feedback parameter for non-financial changes.
 
     # Social capital parameters
     "soc_cap_base": 0.03,  # Base level of social capital.

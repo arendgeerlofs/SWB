@@ -9,10 +9,10 @@ from scenarios import scenarios
 from stochs import param_dict
 
 ITERATIONS = 200
-RUNS = 2
-SAMPLES = 3
+RUNS = 10
+SAMPLES = 11
 
-# One run of the model
+# # One run of the model
 # output = run_exec(params, ITERATIONS)
 
 # # Plot simple plots
@@ -41,11 +41,11 @@ SAMPLES = 3
 
 # # Sensitivity Analysis
 # if __name__ == '__main__':
-#     edit_params = ["segregation", "beta", "fin_event_prob", "nonfin_event_prob", "event_size", "rec_intervention_size", "intervention_gap", "hist_len", "fb_fin", "fb_nonfin", "soc_cap_base", "soc_cap_inf", "dummy"]
+#     edit_params = ["segregation", "beta", "fin_event_prob", "nonfin_event_prob", "event_size", "rec_intervention_factor", "intervention_gap", "hist_len", "fb_fin", "fb_nonfin", "soc_cap_base", "soc_cap_inf", "dummy"]
 #     bounds = [(0, 2), (0, 20), (0, 1), (0, 1), (3/4, 4/3), (0.5, 2), (1, 50), (1, 50), (0, 2), (0, 2), (0.01, 1), (0.25, 4), (0, 10)]
 #     sa = GSA(params, ITERATIONS, 1024, edit_params, bounds, sa_type="Pawn")
 #     print("---------------")
 #     print(sa)
 
 # Heatmap
-run_two_var_heatmap(params, RUNS, ITERATIONS, SAMPLES, ["rec_intervention_size", "hist_comb"], [(1, 2), (1, 10)], hist_gap_comb=True)
+run_two_var_heatmap(params, RUNS, ITERATIONS, (7, 11), ["hist_comb", "rec_intervention_factor"], [(1, 7), (1, 2)], title_add="exp", hist_gap_comb=True)
