@@ -23,9 +23,9 @@ def init_model(constants, init_fin=False, init_nonfin=False, init_SWB=False):
     
     # Initialize financial and non-financial values if not provided
     if not isinstance(init_fin, np.ndarray):
-        init_fin = np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
+        init_fin = np.random.uniform(10, 100, constants['N'])
     if not isinstance(init_nonfin, np.ndarray):
-        init_nonfin = np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
+        init_nonfin = np.random.uniform(10, 100, constants['N'])
     if not isinstance(init_SWB, np.ndarray):
         init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0.001, 10)
     

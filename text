@@ -1,6 +1,4 @@
-"""
-File containing all the parameter values and constants
-"""
+Standard parameter values during GSA and data collection
 
 params = {
     # Network parameters
@@ -25,7 +23,7 @@ params = {
     # Event size
     "fin_event_prob": 0.05,  # Probability of a financial event occurring.
     "nonfin_event_prob": 0.05,  # Probability of a non-financial event occurring.
-    "event_size" : 0.1,  # Magnitude of the event size.
+    "event_size" : 1,  # Magnitude of the event size.
 
     # Parameter indicating change of model during simulations
     "upd_net" : True,  # Boolean to indicate if the network should be updated during simulations.

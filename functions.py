@@ -114,25 +114,36 @@ def calc_sens(sens, sens_factor, desens_factor, event_change, mode="fin"):
     - sens: Array of current sensitivity values.
     - sens_factor: Array of sensitization factors.
     - desens_factor: Array of desensitization factors.
-    - event_change: Array of event changes.
+    - event_change: Array of event change factors.
     - mode: The type of event ("fin" for financial, "nonfin" for non-financial).
 
     Returns:
     - An array of updated sensitivity values.
     """
     new_sens = np.empty(len(sens))
-    rel_event_change = event_change - 1
     for node, value in enumerate(sens):
         if mode == "fin":
-            if event_change[node] > 1:
-                new_sens[node] = value * (1 + (sens_factor[node] * rel_event_change[node])/2)
+            if event_change[node] < 1:
+                rel_event_change = 1 / event_change[node]
+                new_sens[node] = value / ((sens_factor[node] * rel_event_change)/2)
+                # if node == 0:
+                #     print("--------")
+                #     print(value)
+                #     print(event_change[node])
+                #     print(rel_event_change)
+                #     print(sens_factor[node])
+                #     print(((sens_factor[node] * rel_event_change)/2))
+                #     print(new_sens[node])
             else:
-                new_sens[node] = value * (1 + (desens_factor[node] * rel_event_change[node])/2)
+                rel_event_change = event_change[node]
+                new_sens[node] = value * ((desens_factor[node] * rel_event_change)/2)
         elif mode == "nonfin":
-            if event_change[node] > 0:
-                new_sens[node] = value * (1 + (sens_factor[node] * rel_event_change[node])/2)
+            if event_change[node] > 1:
+                rel_event_change = event_change[node]
+                new_sens[node] = value * ((sens_factor[node] * rel_event_change)/2)
             else:
-                new_sens[node] = value / (1 + (desens_factor[node] * rel_event_change[node])/2)
+                rel_event_change = 1 / event_change[node]
+                new_sens[node] = value / ((desens_factor[node] * rel_event_change)/2)
     return np.clip(new_sens, 0.25, 4)
 
 def init_ind_params(constants):
@@ -158,41 +169,68 @@ def mean_chg(data, change_point, alpha=0.05, per_agent=False):
     # Mean wise -> if the average state over population has changed
     amount_agents = np.shape(data)[1]
     if per_agent:
-        amount_changed = 0
+        chg_data = np.zeros((3))
         for agent in range(amount_agents):
             segment_before, segment_after = data[:change_point, agent], data[change_point:, agent]
             _, p_value = mannwhitneyu(segment_before, segment_after)
             if p_value <= alpha:
-                amount_changed += 1
-        return amount_changed / amount_agents
+                if np.mean(segment_before) < np.mean(segment_after):
+                    chg_data[0] += 1
+                else:
+                    chg_data[2] += 1
+            else:
+                chg_data[1] += 1
+        return chg_data / amount_agents
     else:
+        data = np.mean(data, axis=1)
         segment_before, segment_after = data[:change_point], data[change_point:]
         _, p_value = mannwhitneyu(segment_before, segment_after)
         if p_value <= alpha:
-            return True
+            if np.mean(segment_before) < np.mean(segment_after):
+                return 1
+            else:
+                return -1
+        else:
+            return 0
         
-def is_oscillatory(output):
-    return
+# def is_oscillatory(output):
+#     return
 
-def system_behaviour_cat(data, params):
+def system_behaviour_cat(chg_data):
     "Categorises the behaviour of the system into 6 categories"
-    chg_point = params["burn_in_period"]
-    amount_chgd = mean_chg(data, chg_point, per_agent=True)
-    if is_oscillatory(data[chg_point:]):
-        # There is oscillatory behaviour around the SWB equilirbrium of the agents (unstable system)
-        return 0
-    elif amount_chgd == 0:
-        # No agents equilibrium SWB changed
+    if chg_data[0] == 1:
+        # All agents positive change in mean SWB
         return 1
-    elif amount_chgd < 1/3:
-        # 0 and 2/3rd's of the agents changed SWB
+    elif chg_data[2] == 1:
+        # All agents negative change in mean SWB
         return 2
-    elif amount_chgd < 2/3:
-        # between 1/3rd's and 2/3rd's of the agents changed SWB
-        return 3
-    elif amount_chgd < 1:
-        # 2/3rd's or more but not all of the agents changed SWB
-        return 4
     else:
-        # All agents changed their SWB
-        return 5
+        # Other
+        return 0
+
+def get_all_data(output, params):
+    results = np.empty(45)
+    for i in range(18):
+        data = extract_data(output, i)
+        results[i*2] = np.mean(data[:-50])
+        results[i*2 + 1] = np.var(data[:-50])
+    SWB_data = extract_data(output, 1)
+    change_point = params["burn_in_period"]
+    segment_before, segment_after = SWB_data[:change_point], SWB_data[change_point:]
+    mean_before, mean_after = np.mean(segment_before), np.mean(segment_after)
+    var_before, var_after = np.var(segment_before), np.var(segment_after)
+    chg_data = mean_chg(SWB_data, change_point, per_agent=True)
+    system_chg = mean_chg(SWB_data, change_point)
+    system_cat = system_behaviour_cat(chg_data)
+    results[36] = mean_before
+    results[37] = var_before
+    results[38] = mean_after
+    results[39] = var_after
+    results[40] = system_cat
+    results[41] = chg_data[0]
+    results[42] = chg_data[2]
+    results[43] = chg_data[1]
+    results[44] = system_chg
+    return results
+
+    

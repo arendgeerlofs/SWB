@@ -82,10 +82,10 @@ def update_states(model):
                         event = np.random.normal(0, event_size)
                         rel_chg = event / fin[node]
                         if rel_chg < 0:
-                            rel_chg = 1 / (rel_chg - 1)
+                            rel_chg = 1 / -(rel_chg - 1)
                         else:
                             rel_chg += 1
-                        fin[node] += event
+                        fin[node] *= rel_chg
                         new_fin_sens[node] = calc_sens([new_fin_sens[node]], [sens[node]], [desens[node]], np.array([rel_chg]), mode="fin")
             else:  # Non-financial event
                 for node, p in enumerate(event_probs):
@@ -93,10 +93,10 @@ def update_states(model):
                         event = np.random.normal(0, event_size)
                         rel_chg = event / nonfin[node]
                         if rel_chg < 0:
-                            rel_chg = 1 / (rel_chg - 1)
+                            rel_chg = 1 / -(rel_chg - 1)
                         else:
                             rel_chg += 1
-                        nonfin[node] += event
+                        nonfin[node] *= rel_chg
                         new_nonfin_sens[node] = calc_sens([new_nonfin_sens[node]], [sens[node]], [desens[node]], np.array([rel_chg]), mode="nonfin")
 
         # Periodic financial interventions occur

@@ -159,13 +159,12 @@ def run_two_var_heatmap(constants, runs, its, samples, params, bounds, title_add
                 SWB = extract_data(output, 1)
                 SWB_data[i, j, k] = np.mean(np.mean(SWB, axis=1)[-new_constants["burn_in_period"]:])
                 SWB_baseline[i, j, k] = np.mean(np.mean(SWB, axis=1)[:new_constants["burn_in_period"]])
-                chg_data[i, j, k] = mean_chg(SWB, new_constants["burn_in_period"], per_agent=True)
+                chg_data[i, j, k] = mean_chg(SWB, new_constants["burn_in_period"], per_agent=True)[0]
     if hist_gap_comb:
         title_add=f"{title_add}_hist_comb"
     np.save("data/heatmap_SWB_data", SWB_data)
     np.save("data/heatmap_SWB_baseline", SWB_baseline)
     np.save("data/heatmap_chg_data", chg_data)
-    two_var_heatmap(SWB_data, SWB_baseline, params, param_1_values, param_2_values, title_add=f"{title_add}")
-    two_var_heatmap(chg_data, SWB_baseline, params, param_1_values, param_2_values, title_add=f"_chg{title_add}", per_person=True)
+    two_var_heatmap(SWB_data, SWB_baseline, params, param_1_values/4, param_2_values, title_add=f"{title_add}")
+    two_var_heatmap(chg_data, SWB_baseline, params, param_1_values/4, param_2_values, title_add=f"_chg{title_add}", per_person=True)
     return
-    

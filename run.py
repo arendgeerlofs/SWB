@@ -2,22 +2,22 @@
 run file
 """
 from run_functions import all_scenarios, stoch_plot_param, run_exec, run_var_plot, run_two_var_heatmap
-from sa import GSA
+from sa import GSA, param_space_behaviour
 from visualisation import visualise, plot_avg, plot_for_one, SWB_gif
 from parameters import params
 from scenarios import scenarios
 from stochs import param_dict
 
-ITERATIONS = 200
+ITERATIONS = 400
 RUNS = 10
 SAMPLES = 11
 
-# # One run of the model
-# output = run_exec(params, ITERATIONS)
+# One run of the model
+output = run_exec(params, ITERATIONS)
 
-# # Plot simple plots
-# plot_for_one(output)
-# plot_avg(output)
+# Plot simple plots
+plot_for_one(output)
+plot_avg(output)
 
 # # Stochastic plot for 1 parameter with bounds and param samples
 # for param in param_dict:
@@ -39,13 +39,20 @@ SAMPLES = 11
 # SWB gif of network
 # visualise(model, output)
 
+edit_params = ["segregation", "beta", "fin_event_prob", "nonfin_event_prob", "event_size", "net_upd_freq", "rec_intervention_factor", "intervention_gap", "hist_len", "fb_fin", "fb_nonfin", "soc_cap_base", "soc_cap_inf", "dummy"]
+bounds = [(0, 2), (0, 20), (0, 1), (0, 1), (0, 5), (0, 1), (0.5, 2), (1, 50), (1, 50), (0, 2), (0, 2), (0.01, 1), (0.25, 4), (0, 10)]
+
 # # Sensitivity Analysis
 # if __name__ == '__main__':
-#     edit_params = ["segregation", "beta", "fin_event_prob", "nonfin_event_prob", "event_size", "rec_intervention_factor", "intervention_gap", "hist_len", "fb_fin", "fb_nonfin", "soc_cap_base", "soc_cap_inf", "dummy"]
-#     bounds = [(0, 2), (0, 20), (0, 1), (0, 1), (3/4, 4/3), (0.5, 2), (1, 50), (1, 50), (0, 2), (0, 2), (0.01, 1), (0.25, 4), (0, 10)]
 #     sa = GSA(params, ITERATIONS, 1024, edit_params, bounds, sa_type="Pawn")
 #     print("---------------")
 #     print(sa)
 
+# # System data
+# if __name__ == '__main__':
+#     data = param_space_behaviour(params, ITERATIONS, 1024, edit_params, bounds)
+#     print("---------------")
+#     print(data)
+
 # Heatmap
-run_two_var_heatmap(params, RUNS, ITERATIONS, (7, 11), ["hist_comb", "rec_intervention_factor"], [(1, 7), (1, 2)], title_add="exp", hist_gap_comb=True)
+# run_two_var_heatmap(params, RUNS, ITERATIONS, (7, 11), ["hist_comb", "rec_intervention_factor"], [(1, 7), (1, 2)], title_add="exp", hist_gap_comb=True)
