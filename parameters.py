@@ -9,7 +9,7 @@ params = {
     'm' : 1,  # Initial number of edges to attach from a new node to existing nodes.
     'p' : 0.1,  # Probability of adding a new edge between two existing nodes.
     'segregation': 0.9,  # Segregation parameter influencing the likelihood of connection changes.
-    'beta' : 20,  # Beta parameter influencing the connection probability.
+    'beta' : 5,  # Beta parameter influencing the connection probability.
 
     # Likert scale low and high
     "L_low" : 0,  # Lower bound of the Likert scale.

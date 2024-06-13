@@ -126,14 +126,6 @@ def calc_sens(sens, sens_factor, desens_factor, event_change, mode="fin"):
             if event_change[node] < 1:
                 rel_event_change = 1 / event_change[node]
                 new_sens[node] = value / ((sens_factor[node] * rel_event_change)/2)
-                # if node == 0:
-                #     print("--------")
-                #     print(value)
-                #     print(event_change[node])
-                #     print(rel_event_change)
-                #     print(sens_factor[node])
-                #     print(((sens_factor[node] * rel_event_change)/2))
-                #     print(new_sens[node])
             else:
                 rel_event_change = event_change[node]
                 new_sens[node] = value * ((desens_factor[node] * rel_event_change)/2)
