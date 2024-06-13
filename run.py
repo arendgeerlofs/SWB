@@ -1,12 +1,12 @@
 """
 run file
 """
-from run_functions import all_scenarios, stoch_plot_param, run_exec, run_var_plot, run_two_var_heatmap
-from sa import GSA, param_space_behaviour
-from visualisation import visualise, plot_avg, plot_for_one, SWB_gif
+# from run_functions import all_scenarios, stoch_plot_param, run_exec, run_var_plot, run_two_var_heatmap
+from sa import param_space_behaviour#, GSA
+# from visualisation import visualise, plot_avg, plot_for_one, SWB_gif
 from parameters import params
-from scenarios import scenarios
-from stochs import param_dict
+# from scenarios import scenarios
+# from stochs import param_dict
 
 ITERATIONS = 200
 RUNS = 1
