@@ -92,7 +92,7 @@ def plot_avg(output, columns_to_plot= ["SWB", "SWB_exp", "financial", "fin_exp",
     ax.set_ylabel('Value')
     ax.set_title('Drivers and SWB over time')
     ax.legend()
-    plt.savefig(f"figures/ylim_{name_addition}")
+    plt.savefig(f"figures/{name_addition}_ylim")
 
 
 def plot_for_one(output, plot_from=0, name_addition="", states_to_plot=["SWB", "fin", "nonfin", "sens", "RFC", "soc_cap"]):

@@ -27,7 +27,6 @@ def run_model(param_values, constants, problem, its, inits, output_queue, output
     if output_type == "GSA":
         data = np.empty(len(param_values))
     elif output_type == "All":
-        print(np.shape(param_values)[1])
         data = np.empty((len(param_values), np.shape(param_values)[1]+(18+2)*2+5))
     
     init_fin, init_nonfin, init_SWB = inits

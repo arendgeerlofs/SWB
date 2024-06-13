@@ -8,7 +8,7 @@ from parameters import params
 from scenarios import scenarios
 from stochs import param_dict
 
-ITERATIONS = 20
+ITERATIONS = 200
 RUNS = 1
 SAMPLES = 1
 
