@@ -186,31 +186,31 @@ def param_space_behaviour(constants, its, samples, parameters=[], bounds=[[]]):
     df.to_csv("data/param_space_behaviour_results.csv")
     return data[40]
 
-def LSA(constants, its, samples, parameters=[], bounds=[[]]):
-    """
-    Local Sensitivity Analysis (LSA) using One-Factor-At-a-Time (OFAT) method.
+# def LSA(constants, its, samples, parameters=[], bounds=[[]]):
+#     """
+#     Local Sensitivity Analysis (LSA) using One-Factor-At-a-Time (OFAT) method.
 
-    Parameters:
-    - constants (dict): Dictionary of model constants.
-    - its (int): Number of iterations to run the model.
-    - samples (int): Number of samples for the sensitivity analysis.
-    - parameters (list): List of parameter names to be analyzed.
-    - bounds (list): List of bounds for each parameter.
+#     Parameters:
+#     - constants (dict): Dictionary of model constants.
+#     - its (int): Number of iterations to run the model.
+#     - samples (int): Number of samples for the sensitivity analysis.
+#     - parameters (list): List of parameter names to be analyzed.
+#     - bounds (list): List of bounds for each parameter.
 
-    Returns:
-    - data (ndarray): Array of results from the sensitivity analysis.
+#     Returns:
+#     - data (ndarray): Array of results from the sensitivity analysis.
 
-    This function performs local sensitivity analysis by varying one parameter at a time
-    within the specified bounds, running the model, and calculating the mean SWB at the last timestep.
-    """
-    data = np.array((len(parameters), samples))
-    for index, param in enumerate(parameters):
-        param_values = np.linspace(bounds[index][0], bounds[index][1], samples)
-        new_constants = constants
-        for i, value in enumerate(param_values):
-            new_constants[param] = value
-            output = exec(new_constants, its, verbose=False)
-            SWB = extract_data(output, 1)
-            data[index][i] = np.mean(SWB[-1])
+#     This function performs local sensitivity analysis by varying one parameter at a time
+#     within the specified bounds, running the model, and calculating the mean SWB at the last timestep.
+#     """
+#     data = np.array((len(parameters), samples))
+#     for index, param in enumerate(parameters):
+#         param_values = np.linspace(bounds[index][0], bounds[index][1], samples)
+#         new_constants = constants
+#         for i, value in enumerate(param_values):
+#             new_constants[param] = value
+#             output = exec(new_constants, its, verbose=False)
+#             SWB = extract_data(output, 1)
+#             data[index][i] = np.mean(SWB[-1])
 
-    return data
+#     return data
