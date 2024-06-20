@@ -38,6 +38,8 @@ def update_states(model):
     # Dict to save parameter changes to
     param_chgs = {}
 
+    # print(f"{cur_it} --- {np.mean(SWB)} - {np.mean(SWB_exp)} --- {np.mean(SWB / SWB_exp)} --- {np.mean(fin)}")
+
     # Feedback effect of SWB delta of last time step
     SWB_rel = SWB / SWB_exp
     fin *= 1 - (1 - SWB_rel) * model.constants["fb_fin"]
@@ -70,7 +72,6 @@ def update_states(model):
 
     # Calculate chance of events occurring per node
     event_chances = np.random.uniform(0, 1, (2, N))
-
 
     # Burn in period 
     if cur_it > model.constants["burn_in_period"]:
@@ -160,16 +161,6 @@ def update_states(model):
     nonfin_change = ((1 / np.log(2)) * np.log(nonfin_rel + 1) - 1) * nonfin_sens
     total_nonfin_change = soc_cap_change + nonfin_change
 
-    # if cur_it >= 100:
-    #     print(f"-------{cur_it}-------")
-    #     print(cur_it % model.constants["intervention_gap"] == 0)
-    #     print(np.mean(fin_sens), np.mean(nonfin_sens))
-    #     print(np.mean(fin), np.mean(nonfin))
-    #     print(np.mean(fin_rel), np.mean(nonfin_rel))
-    #     print(np.mean(fin_SWB_change), np.mean(nonfin_change))
-    #     print(np.mean(total_fin_change), np.mean(total_nonfin_change))
-    #     print(np.mean(SWB_norm + total_fin_change + total_nonfin_change))
-    
     # Social resillience
     SWB_change = total_fin_change + total_nonfin_change
     for i, node_change in enumerate(SWB_change):
@@ -177,7 +168,7 @@ def update_states(model):
             SWB_change[i] = node_change / ((soc_cap[i] / soc_cap_base) * soc_cap_inf)
 
     # Bound SWB
-    SWB = np.clip(SWB_norm + total_fin_change + total_nonfin_change, 0.001, 10)
+    SWB = np.clip(SWB_norm + total_fin_change + total_nonfin_change, 0.001, 100)
 
     # Save new SWB, fin and nonfin values
     param_chgs["SWB"] = SWB

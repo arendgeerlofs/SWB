@@ -228,10 +228,9 @@ def plot_var(data, intervention_timesteps, int_var):
 
 def two_var_heatmap(data, baseline, params, samples_1, samples_2, title_add="", per_person=False):
     data = np.mean(data, axis=2)
-    baseline = np.mean(baseline, axis=2)
 
     plt.figure(figsize=(10, 8))
-    sns.heatmap(data, annot=True, cmap="YlGnBu", fmt=".2f")
+    sns.heatmap(data, annot=True, cmap="Wistia", fmt=".2f")
     if per_person:
         plt.title('Proportion of agents for which SWB changed after intervention')
     else:
@@ -246,7 +245,8 @@ def two_var_heatmap(data, baseline, params, samples_1, samples_2, title_add="", 
     plt.clf()
     plt.close()
     if not per_person:
-        sns.heatmap(data-baseline, annot=True, cmap="YlGnBu", fmt=".2f")
+        baseline = np.mean(baseline, axis=2)
+        sns.heatmap(data-baseline, annot=True, cmap="Wistia", fmt=".2f")
         plt.title('Difference in SWB after and before intervention')
         # plt.xlabel(f'{params[1]}')
         # plt.ylabel(f'Mean {params[0]}')

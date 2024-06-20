@@ -152,7 +152,7 @@ def init_ind_params(constants):
     """
     init_fin = np.random.uniform(10, 100, constants['N'])
     init_nonfin = np.random.uniform(10, 100, constants['N'])
-    init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0.001, 10)
+    init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0.001, 100)
     return (init_fin, init_nonfin, init_SWB)
 
 def mean_chg(data, change_point, alpha=0.05, per_agent=False):

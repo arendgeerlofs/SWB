@@ -111,7 +111,7 @@ def stoch_plot_param(constants, runs, its, param, bounds, samples, plot_componen
     
     plot_stoch_param(SWB_data, param, param_samples, intervention_timesteps, int_var, title_add=title_add)
     if plot_components:
-        plot_stoch_components(fin_data, exp_fin_data, nonfin_data, exp_nonfin_data, RFC_data, exp_RFC_data, soccap_data, exp_soccap_data, param, param_steps, intervention_timesteps, int_var, title_add=title_add)
+        plot_stoch_components(fin_data, exp_fin_data, nonfin_data, exp_nonfin_data, RFC_data, exp_RFC_data, soccap_data, exp_soccap_data, param, param_samples, intervention_timesteps, int_var, title_add=title_add)
     return
 
 def run_var_plot(constants, runs, its):
@@ -134,7 +134,6 @@ def run_two_var_heatmap(constants, runs, its, samples, params, bounds, title_add
     init_fin, init_nonfin, init_SWB = init_ind_params(constants)
     param_1_values = 2**np.linspace(bounds[0][0], bounds[0][1], samples[0]) * 0.5
     param_2_values = np.linspace(bounds[1][0], bounds[1][1], samples[1])
-    print(param_1_values)
     # Create data arrays
     SWB_data = np.empty((samples[0], samples[1], runs))
     SWB_baseline = np.empty((samples[0], samples[1], runs))
@@ -143,8 +142,8 @@ def run_two_var_heatmap(constants, runs, its, samples, params, bounds, title_add
     for i, param_1 in enumerate(param_1_values):
         new_constants = constants.copy()
         if hist_gap_comb:
-            new_constants["intervention_gap"] = 4
-            new_constants["hist_len"] = int(param_1)
+            new_constants["intervention_gap"] = param_1
+            new_constants["hist_len"] = 32 * 0.5
         else:
             if params[0] in param_int_list:
                 param_1 = int(param_1)
@@ -165,6 +164,6 @@ def run_two_var_heatmap(constants, runs, its, samples, params, bounds, title_add
     np.save("data/heatmap_SWB_data", SWB_data)
     np.save("data/heatmap_SWB_baseline", SWB_baseline)
     np.save("data/heatmap_chg_data", chg_data)
-    two_var_heatmap(SWB_data, SWB_baseline, params, param_1_values/4, param_2_values, title_add=f"{title_add}")
-    two_var_heatmap(chg_data, SWB_baseline, params, param_1_values/4, param_2_values, title_add=f"_chg{title_add}", per_person=True)
+    two_var_heatmap(SWB_data, SWB_baseline, params, 16 / param_1_values, param_2_values, title_add=f"{title_add}")
+    two_var_heatmap(chg_data, SWB_baseline, params, 16 / param_1_values, param_2_values, title_add=f"_chg{title_add}", per_person=True)
     return
