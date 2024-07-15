@@ -32,7 +32,10 @@ def run_model(mp_index, param_values, constants, problem, its, inits, output_que
     init_fin, init_nonfin, init_SWB = inits
     for index, params in enumerate(param_values):
         if index % 100 == 0:
-            print(mp_index, index)
+            if index == 0:
+                print(mp_index, len(param_values))
+            else:
+                print(mp_index, index)
         new_constants = constants.copy()
         for param_ind, param in enumerate(params):
             if problem['names'][param_ind] in param_int_list:
@@ -149,8 +152,6 @@ def param_space_behaviour(constants, its, samples, parameters=[], bounds=[[]]):
     # Split param_values into chunks for multiprocessing
     chunk_size = len(param_values) // multiprocessing.cpu_count()
     param_chunks = [param_values[i:i + chunk_size] for i in range(0, len(param_values), chunk_size)]
-
-    print(len(param_chunks), len(param_values))
 
     # Create a multiprocessing Queue to collect results from worker processes
     output_queue = multiprocessing.Queue()
