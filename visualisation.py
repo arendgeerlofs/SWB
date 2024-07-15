@@ -26,23 +26,29 @@ def visualise(model, output):
 def plot_stoch_param(data, param_name, param_steps, intervention_timesteps, int_var, title_add=""):
     line_color = "black"
     colors = ['r', 'b', 'g', 'c', 'm', 'y', 'k', 'tab:orange', 'tab:brown', 'tab:pink', 'tab:gray']
-    plt.figure(figsize=(12,8))
+    added_to_legend = []
     for index, param_step in enumerate(data):
         stds = np.std(param_step, axis=0)
         means = np.mean(param_step, axis=0)
         plt.fill_between(np.linspace(0, len(means), len(means)), means-stds, means+stds, color=colors[index], alpha=0.1)
-        plt.plot(means, linestyle='-', marker='.', label=f"{param_name}: {param_steps[index]:.2f}", color=colors[index])
+        plt.plot(means, label=f"{param_name}: {param_steps[index]:.2f}", color=colors[index])
     for index, intervention in enumerate(intervention_timesteps):
         if int_var[index] == "fin":
             line_color = "green"
         elif int_var[index] == "nonfin":
             line_color = "blue"
-        plt.axvline(x=intervention, color=line_color, linestyle='--')
-    plt.title(f"{param_name}")
-    plt.xlabel("Iteration")
-    plt.ylabel("Average SWB")
-    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.savefig(f"figures/stoch_plots/{title_add}{param_name}/SWB", bbox_inches='tight')
+        if int_var[index] not in added_to_legend:
+            plt.axvline(x=intervention, color=line_color, linestyle='--', label=int_var[index] + " shock")
+            added_to_legend.append(int_var[index])
+        else:
+            plt.axvline(x=intervention, color=line_color, linestyle='--')
+    plt.legend()
+    plt.title("SWB over time", fontsize=16)
+    plt.xlabel("Iteration", fontsize=14)
+    plt.ylabel("Average SWB", fontsize=14)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.savefig(f"figures/stoch_plots/{title_add}{param_name}/SWB.pdf", dpi=300)
     plt.clf()
     return
 
@@ -74,88 +80,52 @@ def plot_stoch_components(fin, exp_fin, nonfin, exp_nonfin, RFC, exp_RFC, soccap
         plt.close()
     return
 
-def plot_avg(output, columns_to_plot= ["SWB", "SWB_exp", "financial", "fin_exp", "nonfin", "nonfin_exp", "soc_cap", "soc_cap_exp"], plot_from=0, name_addition="avgs"):
-    arrays = [output['states'][key] for key in output['states']]
-    data = np.stack(arrays, axis=0)
-    pop_avg = np.mean(data, axis=1)
-    df_pop_avg = pd.DataFrame(pop_avg, columns=list(init_states.keys()))
-    # df_pop_avg[columns_to_plot].plot()
+def plot_avg(means, stds, title_add=""):
+    labels = ["SWB", "Fin", "Nonfin", "RFC", "Soccap"]
+    line_widths = [2, 1, 1, 1, 1]
+    colours = ["c", "g", "b", "r", "purple"]
+    for index, state_means in enumerate(means):
+        state_stds = stds[index] / np.mean(state_means)
+        state_means = state_means / np.mean(state_means)
+        plt.plot(state_means, label=labels[index], color = colours[index], linewidth=line_widths[index])
+        plt.fill_between(np.linspace(0, len(state_means), len(state_means)), state_means-state_stds, state_means+state_stds, color = colours[index], alpha=0.1)
+    plt.title('Drivers and SWB over time', fontsize=16)
+    plt.xlabel('Iteration', fontsize=14)
+    plt.ylabel('Value', fontsize=14)
+    plt.legend()
 
-    ax = df_pop_avg[columns_to_plot].plot(marker='.', label=columns_to_plot)
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Value')
-    ax.set_title('Drivers and SWB over time')
-    ax.legend()
-    plt.savefig(f"figures/{name_addition}")
-    ax = df_pop_avg[columns_to_plot].plot(marker='.', label=columns_to_plot, ylim=(0, 10))
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Value')
-    ax.set_title('Drivers and SWB over time')
-    ax.legend()
-    plt.savefig(f"figures/{name_addition}_ylim")
+    # Rotate x-axis labels to be vertical and set font size
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
 
+    # Save and close figure
+    plt.savefig(f"figures/avg_{title_add}.pdf", dpi=300)
+    plt.clf()
+    plt.close()
 
-def plot_for_one(output, plot_from=0, name_addition="", states_to_plot=["SWB", "fin", "nonfin", "sens", "RFC", "soc_cap"]):
-    # Plot data
-    # Print SWB scores over time of person 0
-    if "SWB" in states_to_plot:
-        SWB_scores = [[output["states"][a][0][1]] for a in output["states"]]
-        SWB_exp = [[output["states"][a][0][2]] for a in output["states"]]
-        SWB_norm = [[output["states"][a][0][0]] for a in output["states"]]
-        plt.plot(SWB_scores[plot_from:], 'b.-', label="Actual SWB")
-        plt.plot(SWB_exp[plot_from:], 'r.-', label="expection SWB")
-        plt.plot(SWB_norm[plot_from:], 'g.-', label="Norm SWB")
-        plt.legend()
-        plt.savefig(f"figures/SWB_{name_addition}")
-        plt.clf()
+def plot_agent(mean_data, std_data, title_add=""):
+    labels = ["SWB", "Fin", "Nonfin", "RFC", "Soccap"]
+    line_widths = [2, 1, 1, 1, 1]
+    colours = ["c", "g", "b", "r", "purple"]
+    for index, state_means in enumerate(mean_data):
+        state_stds = std_data[index] / np.mean(state_means)
+        state_means = state_means / np.mean(state_means)
+        plt.plot(state_means, label=labels[index], color = colours[index], linewidth=line_widths[index])
+        plt.fill_between(np.linspace(0, len(state_means), len(state_means)), state_means-state_stds, state_means+state_stds, color = colours[index], alpha=0.1)
+    plt.title('Drivers and SWB over time', fontsize=16)
+    plt.xlabel('Iteration', fontsize=14)
+    plt.ylabel('Value', fontsize=14)
+    plt.legend()
 
-    if "fin" in states_to_plot:
-        fin_scores = [[output["states"][a][0][8]] for a in output["states"]]
-        expectation_scores = [[output["states"][a][0][9]] for a in output["states"]]
-        plt.plot(fin_scores[plot_from:], 'b.-', label="Economic")
-        plt.plot(expectation_scores[plot_from:], 'r.-', label="Expection")
-        plt.legend()
-        # plt.ylim(0, 10)
-        plt.savefig(f"figures/fin_{name_addition}")
-        plt.clf()
-    
-    if "nonfin" in states_to_plot:
-        nonfin_scores = [[output["states"][a][0][10]] for a in output["states"]]
-        nonfin_expectation_scores = [[output["states"][a][0][11]] for a in output["states"]]
-        plt.plot(nonfin_scores[plot_from:], 'b.-', label="Non-Economic")
-        plt.plot(nonfin_expectation_scores[plot_from:], 'r.-', label="Expectation")
-        plt.legend()
-        # plt.ylim(0, 10)
-        plt.savefig(f"figures/nonfin_{name_addition}")
-        plt.clf()
-    
-    if "sens" in states_to_plot:
-        fin_sens = [[output["states"][a][0][12]] for a in output["states"]]
-        nonfin_sens = [[output["states"][a][0][13]] for a in output["states"]]
-        plt.plot(fin_sens[plot_from:], 'b.-', label="Economic sensitivity")
-        plt.plot(nonfin_sens[plot_from:], 'r.-', label="Non-Economic sensitivity")
-        plt.legend()
-        plt.savefig(f"figures/sens_{name_addition}")
-        plt.clf()
-    
-    if "RFC" in states_to_plot:
-        RFC = [[output["states"][a][0][14]] for a in output["states"]]
-        RFC_exp = [[output["states"][a][0][15]] for a in output["states"]]
-        plt.plot(RFC[plot_from:], 'b.-', label="RFC")
-        plt.plot(RFC_exp[plot_from:], 'r.-', label="Expectation")
-        plt.legend()
-        plt.ylim(0, 10)
-        plt.savefig(f"figures/RFC_{name_addition}")
-        plt.clf()
+    # Rotate x-axis labels to be vertical and set font size
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
 
-    if "soc_cap" in states_to_plot:
-        soc_cap = [[output["states"][a][0][16]] for a in output["states"]]
-        soc_cap_exp = [[output["states"][a][0][17]] for a in output["states"]]
-        plt.plot(soc_cap[plot_from:], 'b.-', label="Social Capital")
-        plt.plot(soc_cap_exp[plot_from:], 'r.-', label="Expectation")
-        plt.legend()
-        plt.savefig(f"figures/soc_cap_{name_addition}")
-        plt.clf()
+    # Save and close figure
+    plt.savefig(f"figures/single_{title_add}.pdf", dpi=300)
+    plt.clf()
+    plt.close()
+    return
     
 def SWB_gif(model, output, iterations, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
     # Get SWB data
@@ -179,82 +149,115 @@ def update_hist(num, data, xlabel, ylabel, xlim):
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 
-# def stoch_var_change_plot(constants, its=100, runs=10, samples=10, var_to_change="fin_event_prob", bounds=[0, 0.5]):
-#     data = np.empty((samples, runs, constants["N"]))
-#     for i, sample_value in enumerate(np.linspace(bounds[0], bounds[1], samples)):
-#         new_constants = constants
-#         new_constants[var_to_change] = sample_value
-#         for j in range(runs):
-#             output = exec(new_constants, its)
-#             run_data = 
-
-
-def plot_var(data, intervention_timesteps, int_var):
-    plt.figure(figsize=(12,8))
-    for run in data:
-        plt.plot(run)
-    for intervention_index, intervention in enumerate(intervention_timesteps):
-        if int_var[intervention_index] == "fin":
-            line_color = "green"
-        elif int_var[intervention_index] == "nonfin":
-            line_color = "blue"
-        plt.axvline(x=intervention, color=line_color, linestyle='--')
-    plt.title(f"Variance in SWB over time")
-    plt.xlabel("Iteration")
-    plt.ylabel(f"Variance")
-    plt.savefig(f"figures/var2")
-    plt.clf()
-    plt.close()
-
-    plt.figure(figsize=(12,8))
-    plt.plot(np.mean(data, axis=0))
+def plot_var(data, intervention_timesteps, int_var, title_add=""):
+    added_to_legend = []
     mean = np.mean(data, axis=0)
     std = np.std(data, axis=0)
+
+    plt.plot(np.mean(data, axis=0))
     plt.fill_between(np.linspace(0, len(mean), len(mean)), mean-std, mean+std, alpha=0.1)
+
     for intervention_index, intervention in enumerate(intervention_timesteps):
         if int_var[intervention_index] == "fin":
             line_color = "green"
         elif int_var[intervention_index] == "nonfin":
             line_color = "blue"
-        plt.axvline(x=intervention, color=line_color, linestyle='--')
+        if int_var[intervention_index] not in added_to_legend:
+            plt.axvline(x=intervention, color=line_color, linestyle='--', label=int_var[intervention_index] + " shock")
+            added_to_legend.append(int_var[intervention_index])
+        else:
+            plt.axvline(x=intervention, color=line_color, linestyle='--')
+    plt.legend()
     plt.title(f"Variance in SWB over time")
     plt.xlabel("Iteration")
     plt.ylabel(f"Variance")
-    plt.savefig(f"figures/var_avg2")
+    plt.savefig(f"figures/var_avg{title_add}.pdf", dpi=300)
     plt.clf()
     plt.close()
-    return
 
 
 def two_var_heatmap(data, baseline, params, samples_1, samples_2, title_add="", per_person=False):
     data = np.mean(data, axis=2)
 
-    plt.figure(figsize=(10, 8))
+    # plt.figure(figsize=(10, 8))
     sns.heatmap(data, annot=True, cmap="Wistia", fmt=".2f")
     if per_person:
-        plt.title('Proportion of agents for which SWB changed after intervention')
+        plt.title('Proportion of agents for which SWB changed after intervention', fontsize=16)
     else:
-        plt.title('Mean SWB after intervention')
-    # plt.xlabel(f'{params[1]}')
-    # plt.ylabel(f'Mean {params[0]}')
-    plt.xlabel("Intervention factor")
-    plt.ylabel("Amount of interventions per habituation period")
-    plt.xticks(ticks=np.arange(len(samples_2)) + 0.5, labels=[f'{x:.2f}' for x in samples_2])
-    plt.yticks(ticks=np.arange(len(samples_1)) + 0.5, labels=[f'{x:.2f}' for x in samples_1])
-    plt.savefig(f"figures/heatmap{title_add}")
+        plt.title('Mean SWB after intervention', fontsize=16)
+    plt.xlabel(f'{params[1]}', fontsize=14)
+    plt.ylabel(f'Mean {params[0]}', fontsize=14)
+    # plt.xlabel("Intervention factor")
+    # plt.ylabel("Amount of interventions per habituation period")
+    plt.xticks(ticks=np.arange(len(samples_2)) + 0.5, labels=[f'{x:.2f}' for x in samples_2], fontsize=12)
+    plt.yticks(ticks=np.arange(len(samples_1)) + 0.5, labels=[f'{x:.2f}' for x in samples_1], fontsize=12)
+    plt.savefig(f"figures/heatmap{title_add}.pdf", dpi=300)
     plt.clf()
     plt.close()
+
     if not per_person:
         baseline = np.mean(baseline, axis=2)
         sns.heatmap(data-baseline, annot=True, cmap="Wistia", fmt=".2f")
-        plt.title('Difference in SWB after and before intervention')
-        # plt.xlabel(f'{params[1]}')
-        # plt.ylabel(f'Mean {params[0]}')
-        plt.xlabel("Intervention factor")
-        plt.ylabel("Amount of interventions per habituation period")
-        plt.xticks(ticks=np.arange(len(samples_2)) + 0.5, labels=[f'{x:.2f}' for x in samples_2])
-        plt.yticks(ticks=np.arange(len(samples_1)) + 0.5, labels=[f'{x:.2f}' for x in samples_1])
-        plt.savefig(f"figures/heatmap_diff{title_add}")
+        plt.title('Difference in SWB after compared to before interventions', fontsize=16)
+        plt.xlabel(f'{params[1]}', fontsize=14)
+        plt.ylabel(f'Mean {params[0]}', fontsize=14)
+        # plt.xlabel("Intervention factor", fontsize=14)
+        # plt.ylabel("Amount of interventions per habituation period", fontsize=14)
+        plt.xticks(ticks=np.arange(len(samples_2)) + 0.5, labels=[f'{x:.2f}' for x in samples_2], fontsize=12)
+        plt.yticks(ticks=np.arange(len(samples_1)) + 0.5, labels=[f'{x:.2f}' for x in samples_1], fontsize=12)
+        plt.savefig(f"figures/heatmap_diff{title_add}.pdf", dpi=300)
         plt.clf()
         plt.close()
+    return
+
+def hist_plot(data, title_add=""):
+    # plt.hist(data)
+    # Create the histogram
+    counts, _, patches = plt.hist(data, bins=15, edgecolor='black')
+
+    # Apply the Wistia colormap
+    colormap = plt.cm.get_cmap('Wistia')
+
+    # Normalize the counts to the range [0, 1] for the colormap
+    norm = plt.Normalize(counts.min(), counts.max())
+
+    # Apply the colormap to each patch (bin)
+    for count, patch in zip(counts, patches):
+        color = colormap(norm(count))
+        patch.set_facecolor(color)
+
+    # Add colorbar
+    sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
+    sm.set_array([])
+
+    plt.title('Distribution of SWB over the network', fontsize=16)
+    plt.xlabel('SWB', fontsize=14)
+    plt.ylabel('Amount of agents', fontsize=14)
+
+    # Rotate x-axis labels to be vertical and set font size
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+
+    plt.savefig(f"figures/hist{title_add}.pdf", dpi=300)
+    plt.clf()
+    plt.close()
+    return
+
+def degree_plot(df, title_add=""):
+    means = df.groupby("degree").mean()["SWB"]
+    stds = df.groupby("degree").std()["SWB"]
+    plt.plot(means)
+    plt.fill_between(np.linspace(0, len(means)-1, len(means)), means-stds, means+stds, alpha=0.1)
+
+    plt.title('Degree effects', fontsize=16)
+    plt.xlabel('Degree', fontsize=14)
+    plt.ylabel('SWB', fontsize=14)
+
+    # Rotate x-axis labels to be vertical and set font size
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+
+    plt.savefig(f"figures/degree_SWB{title_add}.pdf", dpi=300)
+    plt.clf()
+    plt.close()
     return

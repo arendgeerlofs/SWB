@@ -1,4 +1,5 @@
 import numpy as np
+import networkx as nx
 
 from dynsimf.models.Model import Model
 from dynsimf.models.components.conditions.Condition import ConditionType

@@ -7,11 +7,12 @@ from functions import extract_data, init_ind_params, get_all_data
 from run_functions import run_exec
 
 
-def run_model(param_values, constants, problem, its, inits, output_queue, output_type="GSA"):
+def run_model(mp_index, param_values, constants, problem, its, inits, output_queue, output_type="GSA"):
     """
     Run the model with given parameter values and collect results.
 
     Parameters:
+    - mp_index (int) : index which corresponds to the different cores in the multiprocessing.
     - param_values (ndarray): Array of parameter values for the simulation runs.
     - constants (dict): Dictionary of model constants.
     - problem (dict): Dictionary defining the problem for sensitivity analysis.
@@ -23,14 +24,15 @@ def run_model(param_values, constants, problem, its, inits, output_queue, output
     extracts the SWB data, calculates the mean SWB at the last timestep, and stores the results in the output queue.
     """
     param_int_list = ["N", "hist_len", "intervention_gap"]
+    data = np.empty([0, 0])
     if output_type == "GSA":
         data = np.empty(len(param_values))
     elif output_type == "All":
-        data = np.empty((len(param_values), np.shape(param_values)[1]+(18+2)*2+5))
-    
+        data = np.empty((len(param_values), np.shape(param_values)[1]+(19+2)*2+5))
     init_fin, init_nonfin, init_SWB = inits
-
     for index, params in enumerate(param_values):
+        if index % 100 == 0:
+            print(mp_index, index)
         new_constants = constants.copy()
         for param_ind, param in enumerate(params):
             if problem['names'][param_ind] in param_int_list:
@@ -45,6 +47,8 @@ def run_model(param_values, constants, problem, its, inits, output_queue, output
             output_data = get_all_data(output, new_constants)
             param_array = params
             data[index] = np.concatenate((param_array, output_data))
+    np.save(f"data/mp/mp_data_output_{mp_index}.npz", data)
+    print(f"{mp_index} : Done")
     output_queue.put(data)
 
 def GSA(constants, its, samples, parameters=[], bounds=[[]], sa_type="Normal"):
@@ -152,8 +156,8 @@ def param_space_behaviour(constants, its, samples, parameters=[], bounds=[[]]):
 
     # Create and start worker processes
     processes = []
-    for param_chunk in param_chunks:
-        process = multiprocessing.Process(target=run_model, args=(param_chunk, constants, problem, its, inits, output_queue, "All"))
+    for index, param_chunk in enumerate(param_chunks):
+        process = multiprocessing.Process(target=run_model, args=(index, param_chunk, constants, problem, its, inits, output_queue, "All"))
         processes.append(process)
         process.start()
 
@@ -177,39 +181,41 @@ def param_space_behaviour(constants, its, samples, parameters=[], bounds=[[]]):
                             "Mean non-financial", "Var non-financial", "Mean non-financial exp", "Var non-financial exp", 
                             "Mean financial sens", "Var financial sens", "Mean non-financial sens", "Var non-financial sens", 
                             "Mean RFC", "Var RFC", "Mean RFC exp", "Var RFC exp", "Mean social capital", "Var social capital", 
-                            "Mean social capital exp", "Var social capital exp", " Mean SWB before intervention", "Var SWB before intervention", 
+                            "Mean social capital exp", "Var social capital exp", "Mean degree", "Var degree", 
+                            "Mean SWB before intervention", "Var SWB before intervention", 
                             "Mean SWB after intervention", " Var SWB after intervention", "System behaviour", "Percent changed positive", 
                             "Percent changed negative", "Percent not changed", "System changed"]
+
     # Perform analysis
     df = pd.DataFrame(data, columns=columns)
-    df.to_csv("data/param_space_behaviour_results.csv")
-    return data[40]
+    df.to_csv("data/param_space_behaviour_results_specific.csv")
+    return
 
-# def LSA(constants, its, samples, parameters=[], bounds=[[]]):
-#     """
-#     Local Sensitivity Analysis (LSA) using One-Factor-At-a-Time (OFAT) method.
+def LSA(constants, its, samples, parameters=[], bounds=[[]]):
+    """
+    Local Sensitivity Analysis (LSA) using One-Factor-At-a-Time (OFAT) method.
 
-#     Parameters:
-#     - constants (dict): Dictionary of model constants.
-#     - its (int): Number of iterations to run the model.
-#     - samples (int): Number of samples for the sensitivity analysis.
-#     - parameters (list): List of parameter names to be analyzed.
-#     - bounds (list): List of bounds for each parameter.
+    Parameters:
+    - constants (dict): Dictionary of model constants.
+    - its (int): Number of iterations to run the model.
+    - samples (int): Number of samples for the sensitivity analysis.
+    - parameters (list): List of parameter names to be analyzed.
+    - bounds (list): List of bounds for each parameter.
 
-#     Returns:
-#     - data (ndarray): Array of results from the sensitivity analysis.
+    Returns:
+    - data (ndarray): Array of results from the sensitivity analysis.
 
-#     This function performs local sensitivity analysis by varying one parameter at a time
-#     within the specified bounds, running the model, and calculating the mean SWB at the last timestep.
-#     """
-#     data = np.array((len(parameters), samples))
-#     for index, param in enumerate(parameters):
-#         param_values = np.linspace(bounds[index][0], bounds[index][1], samples)
-#         new_constants = constants
-#         for i, value in enumerate(param_values):
-#             new_constants[param] = value
-#             output = exec(new_constants, its, verbose=False)
-#             SWB = extract_data(output, 1)
-#             data[index][i] = np.mean(SWB[-1])
+    This function performs local sensitivity analysis by varying one parameter at a time
+    within the specified bounds, running the model, and calculating the mean SWB at the last timestep.
+    """
+    data = np.array((len(parameters), samples))
+    for index, param in enumerate(parameters):
+        param_values = np.linspace(bounds[index][0], bounds[index][1], samples)
+        new_constants = constants
+        for i, value in enumerate(param_values):
+            new_constants[param] = value
+            output = run_exec(new_constants, its, verbose=False)
+            SWB = extract_data(output, 1)
+            data[index][i] = np.mean(SWB[-1])
 
-#     return data
+    return data

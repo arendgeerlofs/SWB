@@ -6,10 +6,10 @@ params = {
     # Network parameters
     "type" : "SDA",  # Type of the network model.
     'N' : 100,  # Number of nodes in the network.
-    'm' : 1,  # Initial number of edges to attach from a new node to existing nodes.
+    'm' : 5,  # Initial number of edges to attach from a new node to existing nodes.
     'p' : 0.1,  # Probability of adding a new edge between two existing nodes.
-    'segregation': 0.9,  # Segregation parameter influencing the likelihood of connection changes.
-    'beta' : 5,  # Beta parameter influencing the connection probability.
+    'segregation': 3,  # Segregation parameter influencing the likelihood of connection changes.
+    'beta' : 1,  # Beta parameter influencing the connection probability.
 
     # Likert scale low and high
     "L_low" : 0,  # Lower bound of the Likert scale.
@@ -32,13 +32,13 @@ params = {
     "net_upd_freq" : 0.05, # Probability of network update occurring.
 
     # Pulse intervention size
-    "rec_intervention_factor" : 1,  # Factor of the recurring intervention.
-    "intervention_gap" : 100,  # Gap between recurring interventions.
+    "rec_intervention_factor" : 1.2,  # Factor of the recurring intervention.
+    "intervention_gap" : 5,  # Gap between recurring interventions.
 
     # Set intervention
-    "int_ts": [],  # List of timesteps at which interventions occur.
-    "int_size": [10/11, 5/10, 10/11, 5/10],  # List of intervention factors corresponding to each intervention.
-    "int_var": ["nonfin", "nonfin", "nonfin", "nonfin"],  # List of variables affected by each intervention (financial or non-financial).
+    "int_ts": [110, 130, 150, 170],  # List of timesteps at which interventions occur.
+    "int_size": [11/10, 10/11, 11/10, 10/11],  # List of intervention factors corresponding to each intervention.
+    "int_var": ["fin", "fin", "nonfin", "nonfin"],  # List of variables affected by each intervention (financial or non-financial).
 
     # History length
     "hist_len" : 10,  # Length of the history for which past states are stored.

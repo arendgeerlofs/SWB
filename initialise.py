@@ -21,7 +21,7 @@ def init_network(size=100, net_type="Rd", p=0.5, m=5, alpha=0.3, beta=0.5, fin=0
     - NetworkX graph: Initialized network.
     """
     if net_type == "BA":
-        return nx.barabasi_albert_graph(size, m)
+        return nx.barabasi_albert_graph(size, int(m))
     elif net_type == "Rd":
         return nx.erdos_renyi_graph(size, p)
     elif net_type == "SDA":
@@ -32,7 +32,6 @@ def init_network(size=100, net_type="Rd", p=0.5, m=5, alpha=0.3, beta=0.5, fin=0
 
         dist = distance(fin, nonfin, SWB)
         probs = SDA_prob(dist, alpha, beta)
-
         adj_mat = rng.binomial(size=np.shape(probs), n=1, p=probs)
         for node, row in enumerate(adj_mat):
             for neighbor, value in enumerate(row):
@@ -132,6 +131,9 @@ def initial_soc_cap(model):
     "Initialise social capital using the social capital function"
     return calc_soc_cap(model)
 
+def initial_degrees(model):
+    return np.sum(model.get_adjacency(), axis=1)
+
 init_states = {
     # The goal
     "SWB_norm" : initial_SWB_norm,
@@ -164,4 +166,7 @@ init_states = {
     # Social capital
     'soc_cap': initial_soc_cap,
     'soc_cap_exp': initial_expected_soc_cap,
+
+    # Connections
+    'degrees' : initial_degrees,
 }
