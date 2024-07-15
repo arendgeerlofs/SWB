@@ -1,5 +1,5 @@
 """
-Param bounds per parameter
+Param bounds per parameter for OFAT testing and plotting
 """
 
 param_dict = {

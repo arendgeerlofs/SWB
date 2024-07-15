@@ -1,5 +1,5 @@
 """
-File containing all the parameter values and constants
+File containing default parameter values
 """
 
 params = {
@@ -32,8 +32,8 @@ params = {
     "net_upd_freq" : 0.05, # Probability of network update occurring.
 
     # Pulse intervention size
-    "rec_intervention_factor" : 1.2,  # Factor of the recurring intervention.
-    "intervention_gap" : 5,  # Gap between recurring interventions.
+    "rec_intervention_factor" : 1.1,  # Factor of the recurring intervention.
+    "intervention_gap" : 1000,  # Gap between recurring interventions.
 
     # Set intervention
     "int_ts": [110, 130, 150, 170],  # List of timesteps at which interventions occur.

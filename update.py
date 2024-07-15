@@ -38,7 +38,7 @@ def update_states(model):
     # Dict to save parameter changes to
     param_chgs = {}
 
-    # Feedback effect of SWB delta of last time step
+    # Feedback effect of SWB stimulus difference of last time step
     SWB_rel = SWB / SWB_exp
     for node, node_rel in enumerate(SWB_rel):
         if SWB_rel[node] < 1:
@@ -64,7 +64,7 @@ def update_states(model):
     param_chgs["soc_cap_exp"] = soc_cap_exp
     param_chgs["SWB_exp"] = SWB_exp
 
-    # Events parameters
+    # Event parameters
     event_size = model.constants["event_size"]
     fin_event_prob = model.constants["fin_event_prob"]
     nonfin_event_prob = model.constants["nonfin_event_prob"]
@@ -76,7 +76,7 @@ def update_states(model):
     # Calculate chance of events occurring per node
     event_chances = np.random.uniform(0, 1, (2, N))
 
-    # Burn in period
+    # Only let events occur if after burn in period
     if cur_it > model.constants["burn_in_period"]:
         # Events happen
         for event_type, event_probs in enumerate(event_chances):
@@ -123,8 +123,11 @@ def update_states(model):
                     nonfin *= int_event
                     new_nonfin_sens = calc_sens(new_nonfin_sens, sens, desens, np.repeat(int_event, N), mode="nonfin")
 
+    # Bound financial and non-financial such that they are postive to prevent division by zero
     fin = np.maximum(fin, 0.001)
     nonfin = np.maximum(nonfin, 0.001)
+    fin_exp = np.maximum(fin_exp, 0.001)
+    nonfin_exp = np.maximum(nonfin_exp, 0.001)
 
     # Calculate current RFC
     RFC = calc_RFC(model)
@@ -134,23 +137,17 @@ def update_states(model):
     soc_cap = calc_soc_cap(model)
     param_chgs["soc_cap"] = soc_cap
 
+    # Bound RFC and social capital such that they are postive to prevent division by zero
     RFC = np.maximum(RFC, 0.001)
     soc_cap = np.maximum(soc_cap, 0.001)
-
-    fin_exp = np.maximum(fin_exp, 0.001)
-    nonfin_exp = np.maximum(nonfin_exp, 0.001)
     RFC_exp = np.maximum(RFC_exp, 0.001)
     soc_cap_exp = np.maximum(soc_cap_exp, 0.001)
     
-    # Calculate relative values between previous state value and current expectation
+    # Calculate stimulus difference as relative value between state value and state expectation
     fin_rel = fin / fin_exp
     nonfin_rel = nonfin / nonfin_exp
     RFC_rel = RFC / RFC_exp
     soc_cap_rel = soc_cap / soc_cap_exp
-    
-    # Calculate sensitivity factor
-    fin_sens_factor = (1 / np.log(2)) * np.log(fin_sens + 1)
-    nonfin_sens_factor = (1 / np.log(2)) * np.log(nonfin_sens + 1)
 
     # Change SWB based on Range-Frequency comparison and financial stock
     RFC_SWB_change = (1 / np.log(2)) * np.log(RFC_rel + 1) - 1
@@ -180,8 +177,8 @@ def update_states(model):
     param_chgs["fin_sens"] = new_fin_sens
     param_chgs["nonfin_sens"] = new_nonfin_sens
 
+    # TODO remove community SWB
     # Calculate and save community SWB
-    # TODO: Fix average community SWB
     param_chgs["SWB_comm"] = 1
 
     # Save degrees
@@ -262,6 +259,7 @@ def update_network(nodes, model, network_type="SDA"):
     remove_matrix = np.random.binomial(size=matrix_size, n=1, p=remove_probs)
     add_matrix = np.random.binomial(size=matrix_size, n=1, p=add_probs)
 
+    # Create network update dictionary
     network_update = {}
     for node in nodes:
         network_update[node] = {"remove": [], "add": []}
@@ -269,5 +267,5 @@ def update_network(nodes, model, network_type="SDA"):
             if remove_matrix[node, neighbor] == 1:
                 network_update[node]["remove"].append(neighbor)
             if add_matrix[node, neighbor] == 1:
-                network_update[node]["add"].append(neighbor)  
+                network_update[node]["add"].append(neighbor)
     return {'edge_change': network_update}

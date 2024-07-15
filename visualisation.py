@@ -6,7 +6,16 @@ import pandas as pd
 from functions import extract_data
 from initialise import init_states
 
-def visualise(model, output): 
+def visualise(model, output):
+    """
+    Configure and visualize the model using the specified output.
+
+    Parameters:
+    - model: The model object to be visualized.
+    - output: The output data from the model.
+
+    This function sets up the visualization configuration and then generates an animation.
+    """
     visualization_config = {
         'layout': 'fr',
         'plot_interval': 5,
@@ -24,6 +33,19 @@ def visualise(model, output):
     model.visualize('animation')
 
 def plot_stoch_param(data, param_name, param_steps, intervention_timesteps, int_var, title_add=""):
+    """
+    Plot stochastic parameter changes over time.
+
+    Parameters:
+    - data: The data to plot.
+    - param_name: The name of the parameter being varied.
+    - param_steps: The steps of the parameter.
+    - intervention_timesteps: Timesteps where interventions occur.
+    - int_var: Variables indicating the type of intervention.
+    - title_add: Additional title text for the plot.
+
+    This function generates a line plot with shaded standard deviation areas.
+    """
     line_color = "black"
     colors = ['r', 'b', 'g', 'c', 'm', 'y', 'k', 'tab:orange', 'tab:brown', 'tab:pink', 'tab:gray']
     added_to_legend = []
@@ -48,11 +70,27 @@ def plot_stoch_param(data, param_name, param_steps, intervention_timesteps, int_
     plt.ylabel("Average SWB", fontsize=14)
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
-    plt.savefig(f"figures/stoch_plots/{title_add}{param_name}/SWB.pdf", dpi=300)
+    plt.savefig(f"figures/OFAT/{title_add}{param_name}/SWB.pdf", dpi=300)
     plt.clf()
     return
 
 def plot_stoch_components(fin, exp_fin, nonfin, exp_nonfin, RFC, exp_RFC, soccap, exp_soccap, param_name, param_steps, intervention_timesteps, int_var, title_add=""):
+    """
+    Plot stochastic components of the model over time.
+
+    Parameters:
+    - fin, exp_fin: Financial data and expected financial data.
+    - nonfin, exp_nonfin: Non-financial data and expected non-financial data.
+    - RFC, exp_RFC: RFC data and expected RFC data.
+    - soccap, exp_soccap: Social capital data and expected social capital data.
+    - param_name: The name of the parameter being varied.
+    - param_steps: The steps of the parameter.
+    - intervention_timesteps: Timesteps where interventions occur.
+    - int_var: Variables indicating the type of intervention.
+    - title_add: Additional title text for the plot.
+
+    This function generates line plots with shaded standard deviation areas for multiple components.
+    """
     line_color = "black"
     title_names = ["fin", "nonfin", "RFC", "soccap"]
     colors = ['r', 'b', 'g', 'c', 'm', 'y', 'k', 'tab:orange', 'tab:brown', 'tab:pink', 'tab:gray']
@@ -75,12 +113,22 @@ def plot_stoch_components(fin, exp_fin, nonfin, exp_nonfin, RFC, exp_RFC, soccap
         plt.xlabel("Iteration")
         plt.ylabel(f"Average {title_names[index]}")
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.savefig(f"figures/stoch_plots/{title_add}{param_name}/{title_names[index]}", bbox_inches='tight')
+        plt.savefig(f"figures/OFAT/{title_add}{param_name}/{title_names[index]}", bbox_inches='tight')
         plt.clf()
         plt.close()
     return
 
 def plot_avg(means, stds, title_add=""):
+    """
+    Plot average values with standard deviation over time.
+
+    Parameters:
+    - means: The mean values to plot.
+    - stds: The standard deviation values to plot.
+    - title_add: Additional title text for the plot.
+
+    This function generates line plots with shaded standard deviation areas for multiple variables.
+    """
     labels = ["SWB", "Fin", "Nonfin", "RFC", "Soccap"]
     line_widths = [2, 1, 1, 1, 1]
     colours = ["c", "g", "b", "r", "purple"]
@@ -104,6 +152,16 @@ def plot_avg(means, stds, title_add=""):
     plt.close()
 
 def plot_agent(mean_data, std_data, title_add=""):
+    """
+    Plot agent data with standard deviation over time.
+
+    Parameters:
+    - mean_data: The mean values to plot.
+    - std_data: The standard deviation values to plot.
+    - title_add: Additional title text for the plot.
+
+    This function generates line plots with shaded standard deviation areas for multiple variables.
+    """
     labels = ["SWB", "Fin", "Nonfin", "RFC", "Soccap"]
     line_widths = [2, 1, 1, 1, 1]
     colours = ["c", "g", "b", "r", "purple"]
@@ -128,11 +186,41 @@ def plot_agent(mean_data, std_data, title_add=""):
     return
     
 def SWB_gif(model, output, iterations, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
-    # Get SWB data
+    """
+    Create a GIF of SWB over iterations.
+
+    Parameters:
+    - model: The model object.
+    - output: The output data from the model.
+    - iterations: The number of iterations.
+    - fps: Frames per second for the GIF.
+    - name: The name of the GIF file.
+    - xlabel: Label for the x-axis.
+    - ylabel: Label for the y-axis.
+    - xlim: Limits for the x-axis.
+    - ylim: Limits for the y-axis.
+
+    This function extracts data and generates a GIF showing SWB over time.
+    """
     data = extract_data(output, 1)
     gif(data, iterations, fps, name=name, xlabel=xlabel, ylabel=ylabel, xlim=xlim)
 
 def gif(data, frames, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
+    """
+    Create a GIF from data.
+
+    Parameters:
+    - data: The data to visualize.
+    - frames: Number of frames in the GIF.
+    - fps: Frames per second for the GIF.
+    - name: The name of the GIF file.
+    - xlabel: Label for the x-axis.
+    - ylabel: Label for the y-axis.
+    - xlim: Limits for the x-axis.
+    - ylim: Limits for the y-axis.
+
+    This function generates and saves a GIF animation.
+    """
     number_of_frames = 100
 
     fig = plt.figure()
@@ -142,6 +230,18 @@ def gif(data, frames, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim
     anim.save(f'animations/{name}.gif',writer=writergif)
 
 def update_hist(num, data, xlabel, ylabel, xlim):
+    """
+    Update histogram for each frame in the GIF.
+
+    Parameters:
+    - num: Current frame number.
+    - data: The data to visualize.
+    - xlabel: Label for the x-axis.
+    - ylabel: Label for the y-axis.
+    - xlim: Limits for the x-axis.
+
+    This function updates the histogram for the animation.
+    """
     plt.cla()
     plt.hist(data[num], range=xlim)
     plt.title(f"Iteration: {num}")
@@ -150,6 +250,17 @@ def update_hist(num, data, xlabel, ylabel, xlim):
     plt.ylabel(ylabel)
 
 def plot_var(data, intervention_timesteps, int_var, title_add=""):
+    """
+    Plot variance of SWB over time.
+
+    Parameters:
+    - data: The data to plot.
+    - intervention_timesteps: Timesteps where interventions occur.
+    - int_var: Variables indicating the type of intervention.
+    - title_add: Additional title text for the plot.
+
+    This function generates a line plot with shaded standard deviation areas.
+    """
     added_to_legend = []
     mean = np.mean(data, axis=0)
     std = np.std(data, axis=0)
@@ -177,6 +288,20 @@ def plot_var(data, intervention_timesteps, int_var, title_add=""):
 
 
 def two_var_heatmap(data, baseline, params, samples_1, samples_2, title_add="", per_person=False):
+    """
+    Create a heatmap for two variables.
+
+    Parameters:
+    - data: The data to visualize.
+    - baseline: Baseline data for comparison.
+    - params: The parameters being varied.
+    - samples_1: Sample values for the first parameter.
+    - samples_2: Sample values for the second parameter.
+    - title_add: Additional title text for the plot.
+    - per_person: Flag to indicate if the plot is per person.
+
+    This function generates a heatmap and saves it as a PDF.
+    """
     data = np.mean(data, axis=2)
 
     # plt.figure(figsize=(10, 8))
@@ -211,7 +336,15 @@ def two_var_heatmap(data, baseline, params, samples_1, samples_2, title_add="", 
     return
 
 def hist_plot(data, title_add=""):
-    # plt.hist(data)
+    """
+    Plot histogram of SWB data.
+
+    Parameters:
+    - data: The data to plot.
+    - title_add: Additional title text for the plot.
+
+    This function generates a histogram of SWB data and saves it as a PDF.
+    """
     # Create the histogram
     counts, _, patches = plt.hist(data, bins=15, edgecolor='black')
 
@@ -244,6 +377,15 @@ def hist_plot(data, title_add=""):
     return
 
 def degree_plot(df, title_add=""):
+    """
+    Plot the effect of degree on SWB.
+
+    Parameters:
+    - df: The DataFrame containing degree and SWB data.
+    - title_add: Additional title text for the plot.
+
+    This function generates a line plot with shaded standard deviation areas showing the effect of degree on SWB.
+    """
     means = df.groupby("degree").mean()["SWB"]
     stds = df.groupby("degree").std()["SWB"]
     plt.plot(means)

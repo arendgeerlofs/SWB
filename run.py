@@ -2,12 +2,11 @@
 run file
 """
 from run_functions import stoch_plot_param, run_exec, run_two_var_heatmap, run_over_model, run_resilience, run_degree_SWB
-from sa import param_space_behaviour, GSA
+from sa import param_space_behaviour
 from visualisation import visualise, plot_avg, plot_agent, SWB_gif
 from parameters import params
 from scenarios import scenarios
 from stochs import param_dict
-import numpy as np
 
 ITERATIONS = 250
 RUNS = 1
@@ -26,9 +25,9 @@ bounds = [(0, 10), (0, 20), (0.5, 2), (1, 50), (1, 50), (0, 2), (0, 5)]
 # plot_avg(output, title_add="_BA")
 
 
-# Gathering data of the system
-if __name__ == '__main__':
-    param_space_behaviour(params, ITERATIONS, 16384 , edit_params, bounds)
+# # Gathering data of the system
+# if __name__ == '__main__':
+#     param_space_behaviour(params, ITERATIONS, 16384 , edit_params, bounds)
 
 # # One-Factor-At-A-Time 
 # # 
@@ -38,7 +37,7 @@ if __name__ == '__main__':
 # for param in param_dict:
 #     print(f"------{param}------")
 #     params_copy = params.copy()
-#     stoch_plot_param(params_copy, RUNS, ITERATIONS, param, param_dict[param], SAMPLES, plot_components=True, title_add="OFAT/")
+#     stoch_plot_param(params_copy, RUNS, ITERATIONS, param, param_dict[param], SAMPLES, plot_components=True, title_add="")
 
 # # Run all scenarios and plot average SWB
 # all_scenarios(params, scenarios, ITERATIONS)

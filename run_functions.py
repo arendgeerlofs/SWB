@@ -23,28 +23,6 @@ def run_exec(constants, iterations, init_fin=False, init_nonfin=False, init_SWB=
     output = run_model(model, iterations, verbose)
     return output
 
-# def all_scenarios(params, scenarios, its, verbose=True, plot=True):
-#     """
-#     Runs the model for all specified scenarios and optionally plots the results.
-
-#     Parameters:
-#     - params (dict): Initial parameters for the model.
-#     - scenarios (dict): Dictionary of scenarios, each containing parameter modifications.
-#     - its (int): Number of iterations to run the simulation.
-#     - verbose (bool): Whether to display a progress bar during simulation.
-#     - plot (bool): Whether to plot the average results for each scenario.
-
-#     Returns:
-#     - None
-#     """
-#     for scenario_name in scenarios:
-#         for param in scenarios[scenario_name]:
-#             params[param] = scenarios[scenario_name][param]
-#         output = run_exec(params, its, verbose)
-#         if plot:
-#             plot_avg(output, title_add=f"scenarios/{scenario_name}")
-#     return
-
 def stoch_plot_param(constants, runs, its, param, bounds, samples, plot_components=False, title_add=""):
     """
     Runs multiple simulations varying a specified parameter within given bounds,

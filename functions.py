@@ -31,18 +31,15 @@ def calc_RFC(model):
         if I_min == I_max:
             RFC_cur[node] = 0.5
         else:
-            # Range principle
-            if (I_max - I_min) == 0:
-                print(f"{I_max}----{I_min}")
-            R_i = (I - I_min) / (I_max - I_min)
-            # Frequency principle
-            F_i = rankdata(fin[social_circle])[-1] / len(social_circle)
+            R_i = (I - I_min) / (I_max - I_min) # Range principle
+            F_i = rankdata(fin[social_circle])[-1] / len(social_circle) # Frequency principle
             RFC_cur[node] = soc_w[node] * R_i + (1 - soc_w[node]) * F_i
     return 10 * RFC_cur
 
 def distance(fin, nonfin, SWB):
     """
-    Calculate the Euclidean distance matrix between nodes based on financial, non-financial, and SWB states.
+    Calculate the Euclidean distance matrix between nodes based on financial,
+    non-financial, and SWB states.
 
     Parameters:
     - fin: Array of financial states.
@@ -94,7 +91,6 @@ def extract_data(output, state_id):
     Extract the data from the model output for all nodes and return as a 3D array.
 
     Parameters:
-    - nodes: The number of nodes.
     - output: The model output containing state data.
     - state_id: The index of the state to extract.
 
@@ -126,17 +122,17 @@ def calc_sens(sens, sens_factor, desens_factor, event_change, mode="fin"):
         if mode == "fin":
             if event_change[node] < 1:
                 rel_event_change = 1 / event_change[node]
-                new_sens[node] = value / ((sens_factor[node] * rel_event_change)/2)
+                new_sens[node] = value / ((sens_factor[node] * rel_event_change) / 2)
             else:
                 rel_event_change = event_change[node]
-                new_sens[node] = value * ((desens_factor[node] * rel_event_change)/2)
+                new_sens[node] = value * ((desens_factor[node] * rel_event_change) / 2)
         elif mode == "nonfin":
             if event_change[node] > 1:
                 rel_event_change = event_change[node]
-                new_sens[node] = value * ((sens_factor[node] * rel_event_change)/2)
+                new_sens[node] = value * ((sens_factor[node] * rel_event_change) / 2)
             else:
                 rel_event_change = 1 / event_change[node]
-                new_sens[node] = value / ((desens_factor[node] * rel_event_change)/2)
+                new_sens[node] = value / ((desens_factor[node] * rel_event_change) / 2)
     return np.clip(new_sens, 0.25, 4)
 
 def init_ind_params(constants):
@@ -160,6 +156,19 @@ def mean_chg(data, change_point, alpha=0.05, per_agent=False):
     # Calculate if the mean has changed of a state after an intervention
     # Agent wise -> amount of agents for which it has changed
     # Mean wise -> if the average state over population has changed
+    """
+    Calculate if the mean has changed for a state after an intervention.
+
+    Parameters:
+    - data: The data array to analyze.
+    - change_point: The point in time when the intervention occurred.
+    - alpha: The significance level for the Mann-Whitney U test.
+    - per_agent: Boolean indicating if the calculation is agent-wise.
+
+    Returns:
+    - chg_data: Percentage of agents which changed positive, negative and haven't changed of agent-wise
+                Category indicating which way the population mean has changed or hasen't if not agent-wise
+    """
     amount_agents = np.shape(data)[1]
     if per_agent:
         chg_data = np.zeros((3))
@@ -185,28 +194,47 @@ def mean_chg(data, change_point, alpha=0.05, per_agent=False):
                 return -1
         else:
             return 0
-        
-# def is_oscillatory(output):
-#     return
 
 def system_behaviour_cat(chg_data):
-    "Categorises the behaviour of the system into 6 categories"
+    """
+    Categorize the behavior of the system into 3 categories
+
+    Parameters:
+    - chg_data: Change data indicating the direction of mean changes per agent.
+
+    Returns:
+    - An integer representing the category of system behavior.
+    """
     if chg_data[0] == 1:
-        # All agents positive change in mean SWB
+        # All agents experienced positive change in mean SWB
         return 1
     elif chg_data[2] == 1:
-        # All agents negative change in mean SWB
+        # All agents experienced negative change in mean SWB
         return 2
     else:
         # Other
         return 0
 
 def get_all_data(output, params):
+    """
+    Extract and summarize all relevant data from the model output.
+
+    Parameters:
+    - output: The model output containing state data.
+    - params: A dictionary of parameters used in the model.
+
+    Returns:
+    - results: An array of summarized data.
+    """
     results = np.empty(47)
+
+    # Save the means and variances of all states over the last 50 timesteps
     for i in range(18):
         data = extract_data(output, i)
         results[i*2] = np.mean(data[:-50])
         results[i*2 + 1] = np.var(data[:-50])
+
+    # SWB specific data
     SWB_data = extract_data(output, 1)
     change_point = params["burn_in_period"]
     segment_before, segment_after = SWB_data[:change_point], SWB_data[change_point:]
@@ -215,6 +243,8 @@ def get_all_data(output, params):
     chg_data = mean_chg(SWB_data, change_point, per_agent=True)
     system_chg = mean_chg(SWB_data, change_point)
     system_cat = system_behaviour_cat(chg_data)
+
+    # Save SWB specific data
     results[38] = mean_before
     results[39] = var_before
     results[40] = mean_after
@@ -224,4 +254,5 @@ def get_all_data(output, params):
     results[44] = chg_data[2]
     results[45] = chg_data[1]
     results[46] = system_chg
+    
     return results
