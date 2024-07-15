@@ -153,6 +153,7 @@ def param_space_behaviour(constants, its, samples, parameters=[], bounds=[[]]):
     # Create a multiprocessing Queue to collect results from worker processes
     output_queue = multiprocessing.Queue()
 
+    print(len(param_chunks), len(param_values))
     # Create and start worker processes
     processes = []
     for index, param_chunk in enumerate(param_chunks):

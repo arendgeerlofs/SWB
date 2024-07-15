@@ -28,7 +28,7 @@ bounds = [(0, 10), (0, 20), (0.5, 2), (1, 50), (1, 50), (0, 2), (0, 5)]
 
 # Gathering data of the system
 if __name__ == '__main__':
-    param_space_behaviour(params, ITERATIONS, 4 , edit_params, bounds)
+    param_space_behaviour(params, ITERATIONS, 16384 , edit_params, bounds)
 
 # # One-Factor-At-A-Time 
 # # 
