@@ -1,7 +1,7 @@
 """
 run file
 """
-from run_functions import all_scenarios, stoch_plot_param, run_exec, run_two_var_heatmap, run_over_model, run_resilience, run_degree_SWB
+from run_functions import stoch_plot_param, run_exec, run_two_var_heatmap, run_over_model, run_resilience, run_degree_SWB
 from sa import param_space_behaviour, GSA
 from visualisation import visualise, plot_avg, plot_agent, SWB_gif
 from parameters import params
