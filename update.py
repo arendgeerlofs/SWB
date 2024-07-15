@@ -76,7 +76,6 @@ def update_states(model):
     # Calculate chance of events occurring per node
     event_chances = np.random.uniform(0, 1, (2, N))
 
-    print(f"-----{cur_it}-----")
     # Burn in period
     if cur_it > model.constants["burn_in_period"]:
         # Events happen
@@ -107,7 +106,6 @@ def update_states(model):
         # Periodic financial interventions occur
         rec_int_factor = model.constants["rec_intervention_factor"]
         if (cur_it - model.constants["burn_in_period"]) % model.constants["intervention_gap"] == 0:
-            print("Intervention")
             fin *= rec_int_factor
             new_fin_sens = calc_sens(new_fin_sens, sens, desens, np.repeat(rec_int_factor, N), mode="fin")
 
@@ -146,33 +144,29 @@ def update_states(model):
     
     # Calculate relative values between previous state value and current expectation
     fin_rel = fin / fin_exp
-    # print(np.mean(fin_rel))
     nonfin_rel = nonfin / nonfin_exp
     RFC_rel = RFC / RFC_exp
     soc_cap_rel = soc_cap / soc_cap_exp
     
     # Calculate sensitivity factor
-    # fin_sens_factor = (1 / np.log(2)) * np.log(fin_sens + 1)
-    # nonfin_sens_factor = (1 / np.log(2)) * np.log(nonfin_sens + 1)
+    fin_sens_factor = (1 / np.log(2)) * np.log(fin_sens + 1)
+    nonfin_sens_factor = (1 / np.log(2)) * np.log(nonfin_sens + 1)
 
     # Change SWB based on Range-Frequency comparison and financial stock
     RFC_SWB_change = (1 / np.log(2)) * np.log(RFC_rel + 1) - 1
     fin_SWB_change = ((1 / np.log(2)) * np.log(fin_rel + 1) - 1) * fin_sens
-    # print(np.mean(fin_SWB_change))
     total_fin_change = RFC_SWB_change + fin_SWB_change
 
     # SWB change based on system dynamics paper
     soc_cap_change = (1 / np.log(2)) * np.log(soc_cap_rel + 1) - 1
     nonfin_change = ((1 / np.log(2)) * np.log(nonfin_rel + 1) - 1) * nonfin_sens
     total_nonfin_change = soc_cap_change + nonfin_change
-    # print(np.mean(total_fin_change), np.mean(total_nonfin_change))
 
     # Social resillience
     SWB_change = total_fin_change + total_nonfin_change
     for i, node_change in enumerate(SWB_change):
         if node_change < 0:
             SWB_change[i] = node_change / ((soc_cap[i] / soc_cap_base) * soc_cap_inf)
-    # print(np.mean(SWB_change))
 
     # Bound SWB
     SWB = np.clip(SWB_norm + SWB_change, 0.001, 100)

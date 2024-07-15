@@ -188,7 +188,7 @@ def param_space_behaviour(constants, its, samples, parameters=[], bounds=[[]]):
 
     # Perform analysis
     df = pd.DataFrame(data, columns=columns)
-    df.to_csv("data/param_space_behaviour_results_specific.csv")
+    df.to_csv("data/param_space_behaviour_results_server.csv")
     return
 
 def LSA(constants, its, samples, parameters=[], bounds=[[]]):

@@ -19,16 +19,16 @@ bounds = [(0, 10), (0, 20), (0.5, 2), (1, 50), (1, 50), (0, 2), (0, 5)]
 # run_degree_SWB(params, RUNS, ITERATIONS)
 
 # # Run the model once
-output = run_exec(params, ITERATIONS)
+# output = run_exec(params, ITERATIONS)
 
 # # Plot simple plots
 # plot_agent(output, title_add="_BA")
 # plot_avg(output, title_add="_BA")
 
 
-# # Gathering data of the system
-# if __name__ == '__main__':
-#     param_space_behaviour(params, ITERATIONS, 4096 , edit_params, bounds)
+# Gathering data of the system
+if __name__ == '__main__':
+    param_space_behaviour(params, ITERATIONS, 4 , edit_params, bounds)
 
 # # One-Factor-At-A-Time 
 # # 
