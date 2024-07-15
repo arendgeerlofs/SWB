@@ -47,7 +47,6 @@ def run_model(mp_index, param_values, constants, problem, its, inits, output_que
             output_data = get_all_data(output, new_constants)
             param_array = params
             data[index] = np.concatenate((param_array, output_data))
-    np.save(f"data/mp/mp_data_output_{mp_index}.npz", data)
     print(f"{mp_index} : Done")
     output_queue.put(data)
 
