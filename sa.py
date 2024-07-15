@@ -150,10 +150,11 @@ def param_space_behaviour(constants, its, samples, parameters=[], bounds=[[]]):
     chunk_size = len(param_values) // multiprocessing.cpu_count()
     param_chunks = [param_values[i:i + chunk_size] for i in range(0, len(param_values), chunk_size)]
 
+    print(len(param_chunks), len(param_values))
+
     # Create a multiprocessing Queue to collect results from worker processes
     output_queue = multiprocessing.Queue()
 
-    print(len(param_chunks), len(param_values))
     # Create and start worker processes
     processes = []
     for index, param_chunk in enumerate(param_chunks):
