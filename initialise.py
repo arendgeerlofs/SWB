@@ -1,21 +1,24 @@
+"""
+Initialise functions and state dictionary for the SWB model
+"""
+
 import networkx as nx
 import numpy as np
 from functions import calc_RFC, SDA_prob, distance, calc_soc_cap
-from scipy.spatial.distance import cdist
 
-# Initialize the network based on different types
 def init_network(size=100, net_type="Rd", p=0.5, m=5, alpha=0.3, beta=0.5, fin=0, nonfin=0, SWB=0):
     """
     Initialize a network based on the specified type.
     
     Parameters:
     - size (int): Number of nodes in the network.
-    - net_type (str): Type of network ('BA' for Barabási-Albert, 'Rd' for Erdős-Rényi, 'SDA' for Social Distance Attachment).
+    - net_type (str): Type of network ('BA' for Barabási-Albert, 'Rd' for Erdős-Rényi,
+      'SDA' for Social Distance Attachment).
     - p (float): Probability for edge creation in Erdős-Rényi graph.
     - m (int): Number of edges to attach from a new node to existing nodes in Barabási-Albert graph.
     - alpha (float): Parameter for the Social Distance Attachment probability calculation.
     - beta (float): Parameter for the Social Distance Attachment probability calculation.
-    - fin, nonfin, SWB: Attributes used for distance calculation in the Social Distance Attachment model.
+    - fin, nonfin, SWB: Attributes used for distance calculation in the SDA model.
     
     Returns:
     - NetworkX graph: Initialized network.
@@ -89,7 +92,8 @@ def initial_Likert(model):
     Returns:
     - An array of initial Likert-type values for each node.
     """
-    return np.random.uniform(model.constants["L_low"], model.constants["L_high"], model.constants['N'])
+    return np.random.uniform(model.constants["L_low"], model.constants["L_high"],
+                              model.constants['N'])
 
 def initial_expected_fin(model):
     """
@@ -174,7 +178,8 @@ def initial_sensitivity(model):
     - An array of sensitivity values for each node scaled between 0.5 and 2.
     """
     # Generate random values uniformly distributed between L_low and L_high for each node
-    values = np.random.uniform(model.constants["L_low"], model.constants["L_high"], model.constants['N'])
+    values = np.random.uniform(model.constants["L_low"], model.constants["L_high"],
+                                model.constants['N'])
 
     # Calculate the base for scaling values to an exponential scale between 0.5 and 2
     base = (2 / 0.5) ** (1 / (10 - 0))
@@ -192,7 +197,8 @@ def initial_fin_hist(model):
     Returns:
     - A 2D array representing the history of financial states for each node.
     """
-    return model.get_state("financial").reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
+    fin = model.get_state("financial")
+    return fin.reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
 
 def initial_nonfin_hist(model):
     """
@@ -204,7 +210,8 @@ def initial_nonfin_hist(model):
     Returns:
     - A 2D array representing the history of non-financial states for each node.
     """
-    return model.get_state("nonfin").reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
+    nonfin = model.get_state("nonfin")
+    return nonfin.reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
 
 def initial_RFC_hist(model, RFC):
     """
@@ -242,7 +249,8 @@ def initial_SWB_hist(model):
     Returns:
     - A 2D array representing the history of SWB values for each node.
     """
-    return model.get_state("SWB").reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
+    SWB = model.get_state("SWB")
+    return SWB.reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
 
 def initial_SWB_comm(model):
     """

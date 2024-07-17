@@ -1,8 +1,11 @@
+"""
+Helper functions
+"""
+
 import numpy as np
-from scipy.spatial.distance import cdist
 from sklearn.preprocessing import normalize
+from scipy.spatial.distance import cdist
 from scipy.stats import rankdata, mannwhitneyu
-import pandas as pd
 
 def calc_RFC(model):
     """
@@ -149,13 +152,11 @@ def init_ind_params(constants):
     """
     init_fin = np.random.uniform(10, 100, constants['N'])
     init_nonfin = np.random.uniform(10, 100, constants['N'])
-    init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0.001, 100)
+    init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"],
+                                        constants['N']), 0.001, 100)
     return (init_fin, init_nonfin, init_SWB)
 
 def mean_chg(data, change_point, alpha=0.05, per_agent=False):
-    # Calculate if the mean has changed of a state after an intervention
-    # Agent wise -> amount of agents for which it has changed
-    # Mean wise -> if the average state over population has changed
     """
     Calculate if the mean has changed for a state after an intervention.
 
@@ -166,8 +167,8 @@ def mean_chg(data, change_point, alpha=0.05, per_agent=False):
     - per_agent: Boolean indicating if the calculation is agent-wise.
 
     Returns:
-    - chg_data: Percentage of agents which changed positive, negative and haven't changed of agent-wise
-                Category indicating which way the population mean has changed or hasen't if not agent-wise
+    - chg_data: Percentage of changed positive, negative and haven't changed SWB (agent-wise)
+                Category if the population mean has changed or hasen't (not agent-wise)
     """
     amount_agents = np.shape(data)[1]
     if per_agent:
@@ -254,5 +255,5 @@ def get_all_data(output, params):
     results[44] = chg_data[2]
     results[45] = chg_data[1]
     results[46] = system_chg
-    
+
     return results

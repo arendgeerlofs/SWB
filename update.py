@@ -1,3 +1,7 @@
+"""
+State and network update functions for the SWB model
+"""
+
 import numpy as np
 import scipy.ndimage as ndimage
 from sklearn.preprocessing import normalize
@@ -142,7 +146,7 @@ def update_states(model):
     soc_cap = np.maximum(soc_cap, 0.001)
     RFC_exp = np.maximum(RFC_exp, 0.001)
     soc_cap_exp = np.maximum(soc_cap_exp, 0.001)
-    
+
     # Calculate stimulus difference as relative value between state value and state expectation
     fin_rel = fin / fin_exp
     nonfin_rel = nonfin / nonfin_exp
@@ -216,28 +220,28 @@ def update_network(nodes, model, network_type="SDA"):
     # Probability placeholders
     add_probs = np.empty(0)
     remove_probs = np.empty(0)
-    
+
     if network_type == "SDA":
         # Segregation parameter from model constants
         alpha = model.constants["segregation"]
-        
+
         # Get the current financial, non-financial, and SWB states
         fin = model.get_state("financial").reshape(N, 1)
         nonfin = model.get_state("nonfin").reshape(N, 1)
         SWB = model.get_state("SWB").reshape(N, 1)
-        
+
         # Calculate the distance matrix based on financial, non-financial, and SWB states
         dist = distance(fin, nonfin, SWB)
-        
+
         # Calculate the probability matrix for changes in the network
         probs = SDA_prob(dist, alpha, model.constants["beta"])
-        
+
         # Get probability to be removed for neighbors, normalized to 1
         remove_probs = normalize(adj_mat * (1 - probs), axis=1, norm='l1')
-        
+
         # Get probability to be added for non-neighbors, normalized to 1
         add_probs = normalize((1 - adj_mat) * probs, axis=1, norm='l1')
-        
+
     elif network_type == "Rd":
         # Get probability to be removed for neighbors, with total per node equal to 1
         remove_probs = adj_mat / np.sum(adj_mat, axis=1).reshape(N, 1)
@@ -247,7 +251,8 @@ def update_network(nodes, model, network_type="SDA"):
 
     else:
         # Get probability to be removed for neighbors, with total per node equal to 1
-        # Probability formula of Barabasi-Albert from https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model
+        # Probability formula of Barabasi-Albert
+        # from https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model
         rem_degree_mat = (np.sum((1-adj_mat), axis=1) * (adj_mat))
         remove_probs = rem_degree_mat / np.sum(rem_degree_mat, axis=1).reshape(N, 1)
 

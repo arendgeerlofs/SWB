@@ -37,8 +37,8 @@ params = {
 
     # Set intervention
     "int_ts": [110, 130, 150, 170],  # List of timesteps at which interventions occur.
-    "int_size": [11/10, 10/11, 11/10, 10/11],  # List of intervention factors corresponding to each intervention.
-    "int_var": ["fin", "fin", "nonfin", "nonfin"],  # List of variables affected by each intervention (financial or non-financial).
+    "int_size": [11/10, 10/11, 11/10, 10/11],  # List of intervention factors.
+    "int_var": ["fin", "fin", "nonfin", "nonfin"],  # List of intervention variables.
 
     # History length
     "hist_len" : 10,  # Length of the history for which past states are stored.

@@ -1,10 +1,14 @@
+"""
+Agent-Based Subjective Well-Being model
+"""
+
 import numpy as np
-import networkx as nx
 
 from dynsimf.models.Model import Model
 from dynsimf.models.components.conditions.Condition import ConditionType
 from dynsimf.models.components.conditions.StochasticCondition import StochasticCondition
-from initialise import init_states, init_network, initial_fin_hist, initial_RFC_hist, initial_SWB_hist, initial_nonfin_hist, initial_soc_cap_hist
+from initialise import init_states, init_network, initial_fin_hist, initial_RFC_hist
+from initialise import initial_SWB_hist, initial_nonfin_hist, initial_soc_cap_hist
 from update import update_states, update_network
 
 
@@ -14,28 +18,32 @@ def init_model(constants, init_fin=False, init_nonfin=False, init_SWB=False):
 
     Parameters:
     - constants (dict): Configuration parameters for the model including network parameters.
-    - init_fin (numpy.ndarray or bool): Initial financial values or False to generate them randomly.
-    - init_nonfin (numpy.ndarray or bool): Initial non-financial values or False to generate them randomly.
-    - init_SWB (numpy.ndarray or bool): Initial subjective well-being values or False to generate them randomly.
+    - init_fin (numpy.ndarray or bool): Initial financial values or False to
+      generate them randomly.
+    - init_nonfin (numpy.ndarray or bool): Initial non-financial values or False to
+      generate them randomly.
+    - init_SWB (numpy.ndarray or bool): Initial subjective well-being values or False to
+      generate them randomly.
 
     Returns:
     - Model: An initialized model object.
     """
-    
+
     # Initialize financial and non-financial values if not provided
     if not isinstance(init_fin, np.ndarray):
         init_fin = np.random.uniform(10, 100, constants['N'])
     if not isinstance(init_nonfin, np.ndarray):
         init_nonfin = np.random.uniform(10, 100, constants['N'])
     if not isinstance(init_SWB, np.ndarray):
-        init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"], constants['N']), 0.001, 100)
-    
+        init_SWB = np.clip(np.random.normal(constants["SWB_mu"], constants["SWB_sd"],
+                                             constants['N']), 0.001, 100)
+
     # Initialize the network with the given parameters
     network = init_network(constants["N"], constants["type"],
                            constants["p"], constants["m"],
                            constants["segregation"], constants["beta"],
                            init_fin, init_nonfin, init_SWB)
-    
+
     # Create a model object and set its constants
     model = Model(network)
     model.constants = constants
@@ -71,7 +79,8 @@ def init_model(constants, init_fin=False, init_nonfin=False, init_SWB=False):
 
     # Add network update function to the model if network updates are enabled
     if model.constants["upd_net"]:
-        model.add_network_update(update_network, {"model": model}, get_nodes=True, condition=update_conditions["Network"])
+        model.add_network_update(update_network, {"model": model}, get_nodes=True,
+                                 condition=update_conditions["Network"])
 
     return model
 
@@ -87,7 +96,7 @@ def run_model(model, iterations, verbose=True):
     Returns:
     - output: The result of the simulation, typically a history of the states over iterations.
     """
-    
+
     # Run the simulation for the given number of iterations
     output = model.simulate(iterations, show_tqdm=verbose)
 

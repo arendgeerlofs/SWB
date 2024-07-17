@@ -1,8 +1,16 @@
-from model import init_model, run_model
-from visualisation import plot_agent, plot_avg, plot_stoch_param, plot_stoch_components, plot_var, two_var_heatmap, hist_plot, degree_plot
-from functions import extract_data, init_ind_params, mean_chg
+"""
+Functions which run the model for different types of scenarios
+These functions save the gathered data and plot results
+"""
+
 import numpy as np
 import pandas as pd
+
+from model import init_model, run_model
+from visualisation import plot_agent, plot_avg, plot_stoch_param, plot_stoch_components
+from visualisation import plot_var, two_var_heatmap, hist_plot, degree_plot
+from functions import extract_data, init_ind_params, mean_chg
+
 
 def run_exec(constants, iterations, init_fin=False, init_nonfin=False, init_SWB=False, verbose=True):
     """
@@ -11,9 +19,12 @@ def run_exec(constants, iterations, init_fin=False, init_nonfin=False, init_SWB=
     Parameters:
     - constants (dict): Configuration parameters for the model.
     - iterations (int): Number of iterations to run the simulation.
-    - init_fin (numpy.ndarray or bool): Initial financial values or False to generate them randomly.
-    - init_nonfin (numpy.ndarray or bool): Initial non-financial values or False to generate them randomly.
-    - init_SWB (numpy.ndarray or bool): Initial subjective well-being values or False to generate them randomly.
+    - init_fin (numpy.ndarray or bool): Initial financial values or False to
+      generate them randomly.
+    - init_nonfin (numpy.ndarray or bool): Initial non-financial values or False to
+      generate them randomly.
+    - init_SWB (numpy.ndarray or bool): Initial subjective well-being values or False
+      to generate them randomly.
     - verbose (bool): Whether to display a progress bar during simulation.
 
     Returns:
@@ -55,10 +66,10 @@ def stoch_plot_param(constants, runs, its, param, bounds, samples, plot_componen
     exp_RFC_data = np.copy(SWB_data)
     soccap_data = np.copy(SWB_data)
     exp_soccap_data = np.copy(SWB_data)
-    
+
     intervention_timesteps = constants["int_ts"]
     int_var = constants["int_var"]
-    
+
     for i, param_value in enumerate(param_samples):
         if param in param_int_list:
             param_value = int(param_value)
@@ -87,19 +98,41 @@ def stoch_plot_param(constants, runs, its, param, bounds, samples, plot_componen
                 exp_soccap = extract_data(output, 17)
                 exp_soccap_data[i, j] = np.mean(exp_soccap, axis=1)
 
-    np.savez(f'data/stochplot_{param}.npz', SWB_data, exp_SWB_data, fin_data, exp_fin_data, nonfin_data, exp_nonfin_data, RFC_data, exp_RFC_data, soccap_data, exp_soccap_data)
+    np.savez(f'data/stochplot_{param}.npz', SWB_data, exp_SWB_data, fin_data, exp_fin_data,
+              nonfin_data, exp_nonfin_data, RFC_data, exp_RFC_data, soccap_data, exp_soccap_data)
 
-    plot_stoch_param(SWB_data, param, param_samples, intervention_timesteps, int_var, title_add=title_add)
+    plot_stoch_param(SWB_data, param, param_samples, intervention_timesteps, int_var,
+                      title_add=title_add)
     if plot_components:
-        plot_stoch_components(fin_data, exp_fin_data, nonfin_data, exp_nonfin_data, RFC_data, exp_RFC_data, soccap_data, exp_soccap_data, param, param_samples, intervention_timesteps, int_var, title_add=title_add)
+        plot_stoch_components(fin_data, exp_fin_data, nonfin_data, exp_nonfin_data, RFC_data,
+                               exp_RFC_data, soccap_data, exp_soccap_data, param, param_samples,
+                                 intervention_timesteps, int_var, title_add=title_add)
     return
 
 def run_two_var_heatmap(constants, runs, its, samples, params, bounds, title_add = "", hist_gap_comb=False):
+    """
+    Generate heatmaps showing the impact of two varying parameters on
+    subjective well-being (SWB) in a simulated network.
+
+    Parameters:
+    constants (dict): Dictionary containing constant parameters for the simulation.
+    runs (int): Number of simulation runs for each parameter combination.
+    its (int): Number of iterations for each simulation run.
+    samples (list): List containing the number of sample values for each parameter.
+    params (list): List containing the names of the parameters to be varied.
+    bounds (list): List of tuples specifying the bounds for the parameter values.
+    title_add (str): Additional string to be appended to the title of the plots.
+    hist_gap_comb (bool): Boolean flag to indicate if the intervention gap should be combined with historical length.
+
+    Returns:
+    None
+    """
 
     param_int_list = ["N", "hist_len", "intervention_gap"]
     init_fin, init_nonfin, init_SWB = init_ind_params(constants)
     param_1_values = 2**np.linspace(bounds[0][0], bounds[0][1], samples[0]) * 0.5
     param_2_values = 2**np.linspace(bounds[1][0], bounds[1][1], samples[1]) * 0.5
+
     # Create data arrays
     SWB_data = np.empty((samples[0], samples[1], runs))
     SWB_baseline = np.empty((samples[0], samples[1], runs))
@@ -130,11 +163,28 @@ def run_two_var_heatmap(constants, runs, its, samples, params, bounds, title_add
     np.save(f"data/heatmap_SWB_data{title_add}", SWB_data)
     np.save(f"data/heatmap_SWB_baseline{title_add}", SWB_baseline)
     np.save(f"data/heatmap_chg_data{title_add}", chg_data)
-    two_var_heatmap(SWB_data, SWB_baseline, params, 16 / param_1_values, 16 / param_2_values, title_add=f"{title_add}")
-    two_var_heatmap(chg_data, SWB_baseline, params, 16 / param_1_values, 16 / param_2_values, title_add=f"_chg{title_add}", per_person=True)
+    two_var_heatmap(SWB_data, SWB_baseline, params, 16 / param_1_values, 16 / param_2_values,
+                     title_add=f"{title_add}")
+    two_var_heatmap(chg_data, SWB_baseline, params, 16 / param_1_values, 16 / param_2_values,
+                     title_add=f"_chg{title_add}", per_person=True)
     return
 
 def run_over_model(constants, runs, its, visualisations=[], networks=["SDA"], title_add=""):
+    """
+    Run simulations over different network models and generate various visualizations
+      based on the output data.
+
+    Parameters:
+    constants (dict): Dictionary containing constant parameters for the simulation.
+    runs (int): Number of simulation runs for each network type.
+    its (int): Number of iterations for each simulation run.
+    visualisations (list): List of visualization types to be generated.
+    networks (list): List of network types to be simulated.
+    title_add (str): Additional string to be appended to the title of the plots.
+
+    Returns:
+    None
+    """
     init_fin, init_nonfin, init_SWB = init_ind_params(constants)
     relevant_column_ids = [1, 8, 10, 14, 16, 18]
 
@@ -187,9 +237,30 @@ def run_over_model(constants, runs, its, visualisations=[], networks=["SDA"], ti
             df_SWB.to_csv(f"data/degree_SWB_{network_type}{title_add}.csv")
             df_soccap = pd.DataFrame(degree_soccap_combo, columns=["degree", "soccap"])
             df_soccap.to_csv(f"data/degree_soccap_{network_type}{title_add}.csv")
+            degree_plot(df_SWB, title_add=title_add)
+            degree_plot(df_soccap, title_add=title_add)
     return
 
 def run_resilience(constants, runs, its, param, bounds, samples, int_ts, int_factors, int_var, title_add=""):
+    """
+    Analyze the resilience of the network under different parameter settings by measuring
+    the impact and recovery from interventions.
+
+    Parameters:
+    constants (dict): Dictionary containing constant parameters for the simulation.
+    runs (int): Number of simulation runs for each parameter value.
+    its (int): Number of iterations for each simulation run.
+    param (str): Name of the parameter to be varied.
+    bounds (tuple): Tuple specifying the bounds for the parameter values.
+    samples (int): Number of sample values for the parameter.
+    int_ts (list): List of intervention timestamps.
+    int_factors (list): List of intervention factors.
+    int_var (str): Type of intervention variable.
+    title_add (str): Additional string to be appended to the title of the plots.
+
+    Returns:
+    None
+    """
     amount_ints = len(int_ts)
     new_constants = constants.copy()
     new_constants["int_ts"] = int_ts
@@ -222,15 +293,40 @@ def run_resilience(constants, runs, its, param, bounds, samples, int_ts, int_fac
     np.save(f"data/resilience_{param}{title_add}", data)
 
 def run_degree_SWB(constants, runs, its, title_add=""):
+    """
+    Perform simulations to analyze the relationship between the degree (number of connections)
+    of agents in the network and their subjective well-being (SWB). Save the results to a CSV file.
+
+    Parameters:
+    constants (dict): Dictionary containing constant parameters for the simulation.
+    runs (int): Number of simulation runs to perform.
+    its (int): Number of iterations for each simulation run.
+    title_add (str, optional): Additional string to append to the title of
+    the CSV file (default is "").
+
+    Returns:
+    None
+    """
     network_type = constants["type"]
     init_fin, init_nonfin, init_SWB = init_ind_params(constants)
     degree_SWB_combo_list = []
-    for run in range(runs):
+    for _ in range(runs):
+        # Execute the simulation
         output = run_exec(constants, its, init_SWB, init_fin, init_nonfin)
+
+        # Extract degrees and SWB data from the simulation output
         degrees = extract_data(output, 18)[constants["burn_in_period"]:].flatten().reshape(-1, 1)
         SWB = extract_data(output, 1)[constants["burn_in_period"]:].flatten().reshape(-1, 1)
+
+        # Combine degrees and SWB data into a single array
         combo = np.hstack((degrees, SWB))
         degree_SWB_combo_list.append(combo)
+
+    # Stack all simulations into one array
     degree_SWB_combo = np.vstack(degree_SWB_combo_list)
+
+    # Create a pandas DataFrame from the combined data
     df = pd.DataFrame(degree_SWB_combo, columns=["degree", "SWB"])
+
+    # Save the DataFrame to a CSV file
     df.to_csv(f"data/degree_SWB_{network_type}{title_add}.csv")

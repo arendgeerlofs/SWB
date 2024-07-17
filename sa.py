@@ -1,6 +1,11 @@
+"""
+Multiprocessing functions to gather data for parameter space to calculate GSA
+"""
+
+import multiprocessing
 import numpy as np
 import pandas as pd
-import multiprocessing
+
 from SALib.sample.sobol import sample
 from functions import extract_data, init_ind_params, get_all_data
 from run_functions import run_exec
@@ -19,8 +24,9 @@ def run_model(mp_index, param_values, constants, problem, its, inits, output_que
     - inits (tuple): Initial values for financial, non-financial, and SWB states.
     - output_queue (multiprocessing.Queue): Queue to store results from the model runs.
 
-    This function updates the model constants with new parameter values, runs the model, 
-    extracts the SWB data, calculates the mean SWB at the last timestep, and stores the results in the output queue.
+    This function updates the model constants with new parameter values, runs the model,
+    extracts the SWB data, calculates the mean SWB at the last timestep, and stores the
+    results in the output queue.
     """
     param_int_list = ["N", "hist_len", "intervention_gap"]
     data = np.empty([0, 0])
@@ -93,7 +99,9 @@ def param_space_behaviour(constants, its, samples, parameters=[], bounds=[[]]):
     # Create and start worker processes
     processes = []
     for index, param_chunk in enumerate(param_chunks):
-        process = multiprocessing.Process(target=run_model, args=(index, param_chunk, constants, problem, its, inits, output_queue, "All"))
+        process = multiprocessing.Process(target=run_model, args=(index, param_chunk,
+                                                                   constants, problem,
+                                                                     its, inits, output_queue, "All"))
         processes.append(process)
         process.start()
 
