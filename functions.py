@@ -227,7 +227,7 @@ def get_all_data(output, params):
     Returns:
     - results: An array of summarized data.
     """
-    results = np.empty(47)
+    results = np.empty(45)
 
     # Save the means and variances of all states over the last 50 timesteps
     for i in range(18):
@@ -246,14 +246,14 @@ def get_all_data(output, params):
     system_cat = system_behaviour_cat(chg_data)
 
     # Save SWB specific data
-    results[38] = mean_before
-    results[39] = var_before
-    results[40] = mean_after
-    results[41] = var_after
-    results[42] = system_cat
-    results[43] = chg_data[0]
-    results[44] = chg_data[2]
-    results[45] = chg_data[1]
-    results[46] = system_chg
+    results[36] = mean_before
+    results[37] = var_before
+    results[38] = mean_after
+    results[39] = var_after
+    results[40] = system_cat
+    results[41] = chg_data[0]
+    results[42] = chg_data[2]
+    results[43] = chg_data[1]
+    results[44] = system_chg
 
     return results

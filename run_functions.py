@@ -30,7 +30,10 @@ def run_exec(constants, iterations, init_fin=False, init_nonfin=False, init_SWB=
     Returns:
     - output: The result of the simulation, typically a history of the states over iterations.
     """
+    # Create model
     model = init_model(constants, init_fin, init_nonfin, init_SWB)
+
+    # Run model
     output = run_model(model, iterations, verbose)
     return output
 
@@ -51,9 +54,12 @@ def stoch_plot_param(constants, runs, its, param, bounds, samples, plot_componen
     Returns:
     - None
     """
+    # Set constants
     param_int_list = ["N", "hist_len"]
     init_fin, init_nonfin, init_SWB = init_ind_params(constants)
     param_samples = np.linspace(bounds[0], bounds[1], samples)
+    intervention_timesteps = constants["int_ts"]
+    int_var = constants["int_var"]
 
     # Create data arrays
     SWB_data = np.empty((samples, runs, its+1))
@@ -67,40 +73,41 @@ def stoch_plot_param(constants, runs, its, param, bounds, samples, plot_componen
     soccap_data = np.copy(SWB_data)
     exp_soccap_data = np.copy(SWB_data)
 
-    intervention_timesteps = constants["int_ts"]
-    int_var = constants["int_var"]
 
     for i, param_value in enumerate(param_samples):
         if param in param_int_list:
             param_value = int(param_value)
         constants[param] = param_value
         for j in range(runs):
+            # Run model and extract data
             output = run_exec(constants, its, init_fin, init_nonfin, init_SWB)
             SWB = extract_data(output, 1)
             SWB_data[i, j] = np.mean(SWB, axis=1)
-            # exp_SWB = extract_data(output, 2)
-            # exp_SWB_data[i, j] = np.mean(exp_SWB, axis=1)
+            exp_SWB = extract_data(output, 2)
+            exp_SWB_data[i, j] = np.mean(exp_SWB, axis=1)
             if plot_components:
-                fin = extract_data(output, 8)
+                fin = extract_data(output, 7)
                 fin_data[i, j] = np.mean(fin, axis=1)
-                exp_fin = extract_data(output, 9)
+                exp_fin = extract_data(output, 8)
                 exp_fin_data[i, j] = np.mean(exp_fin, axis=1)
-                nonfin = extract_data(output, 10)
+                nonfin = extract_data(output, 9)
                 nonfin_data[i, j] = np.mean(nonfin, axis=1)
-                exp_nonfin = extract_data(output, 11)
+                exp_nonfin = extract_data(output, 10)
                 exp_nonfin_data[i, j] = np.mean(exp_nonfin, axis=1)
-                RFC = extract_data(output, 14)
+                RFC = extract_data(output, 13)
                 RFC_data[i, j] = np.mean(RFC, axis=1)
-                exp_RFC = extract_data(output, 15)
+                exp_RFC = extract_data(output, 14)
                 exp_RFC_data[i, j] = np.mean(exp_RFC, axis=1)
-                soccap = extract_data(output, 16)
+                soccap = extract_data(output, 15)
                 soccap_data[i, j] = np.mean(soccap, axis=1)
-                exp_soccap = extract_data(output, 17)
+                exp_soccap = extract_data(output, 16)
                 exp_soccap_data[i, j] = np.mean(exp_soccap, axis=1)
 
+    # Save data
     np.savez(f'data/stochplot_{param}.npz', SWB_data, exp_SWB_data, fin_data, exp_fin_data,
               nonfin_data, exp_nonfin_data, RFC_data, exp_RFC_data, soccap_data, exp_soccap_data)
 
+    # Plot
     plot_stoch_param(SWB_data, param, param_samples, intervention_timesteps, int_var,
                       title_add=title_add)
     if plot_components:
@@ -127,7 +134,7 @@ def run_two_var_heatmap(constants, runs, its, samples, params, bounds, title_add
     Returns:
     None
     """
-
+    # Set constants
     param_int_list = ["N", "hist_len", "intervention_gap"]
     init_fin, init_nonfin, init_SWB = init_ind_params(constants)
     param_1_values = 2**np.linspace(bounds[0][0], bounds[0][1], samples[0]) * 0.5
@@ -140,6 +147,7 @@ def run_two_var_heatmap(constants, runs, its, samples, params, bounds, title_add
 
     for i, param_1 in enumerate(param_1_values):
         new_constants = constants.copy()
+        # Change parameters
         if hist_gap_comb:
             new_constants["intervention_gap"] = param_1
             new_constants["hist_len"] = 32 * 0.5
@@ -153,6 +161,7 @@ def run_two_var_heatmap(constants, runs, its, samples, params, bounds, title_add
                 param_2 = int(param_2)
             new_constants[params[1]] = param_2
             for k in range(runs):
+                # Run model and extract data
                 output = run_exec(new_constants, its, init_fin, init_nonfin, init_SWB)
                 SWB = extract_data(output, 1)
                 SWB_data[i, j, k] = np.mean(np.mean(SWB, axis=1)[-new_constants["burn_in_period"]:])
@@ -160,9 +169,13 @@ def run_two_var_heatmap(constants, runs, its, samples, params, bounds, title_add
                 chg_data[i, j, k] = mean_chg(SWB, new_constants["burn_in_period"], per_agent=True)[0]
     if hist_gap_comb:
         title_add += "_hist_comb"
+
+    # Save data
     np.save(f"data/heatmap_SWB_data{title_add}", SWB_data)
     np.save(f"data/heatmap_SWB_baseline{title_add}", SWB_baseline)
     np.save(f"data/heatmap_chg_data{title_add}", chg_data)
+
+    # Plot
     two_var_heatmap(SWB_data, SWB_baseline, params, 16 / param_1_values, 16 / param_2_values,
                      title_add=f"{title_add}")
     two_var_heatmap(chg_data, SWB_baseline, params, 16 / param_1_values, 16 / param_2_values,
@@ -185,22 +198,28 @@ def run_over_model(constants, runs, its, visualisations=[], networks=["SDA"], ti
     Returns:
     None
     """
+    # Set constants
     init_fin, init_nonfin, init_SWB = init_ind_params(constants)
-    relevant_column_ids = [1, 8, 10, 14, 16, 18]
-
+    relevant_column_ids = [1, 7, 9, 13, 15, 17]
     intervention_timesteps = constants["int_ts"]
     int_var = constants["int_var"]
+
     for network in networks:
         print(f"---------{network}---------")
         constants["type"] = network
+
+        # Data array
         data = np.empty((len(relevant_column_ids), runs, its+1, constants["N"]))
         for i in range(runs):
+            # Run model and extract data
             output = run_exec(constants, its, init_fin, init_nonfin, init_SWB)
             for j, rel_id in enumerate(relevant_column_ids):
                 data[j][i] = extract_data(output, rel_id)
+
+        # Save data
         np.save(f"data/{network}_output_{runs}_{title_add}", data)
 
-        # Visualise data
+        # Plot
         if "plot_agent" in visualisations:
             agent_means = np.mean(data[:1, :, :, 0], axis=1)
             agent_stds = np.std(data[:1, :, :, 0], axis=1)
@@ -261,35 +280,47 @@ def run_resilience(constants, runs, its, param, bounds, samples, int_ts, int_fac
     Returns:
     None
     """
+    # Set constants
     amount_ints = len(int_ts)
     new_constants = constants.copy()
     new_constants["int_ts"] = int_ts
     new_constants["int_size"] = int_factors
     new_constants["int_var"] = [int_var] * amount_ints
     burn_in_period = new_constants["burn_in_period"]
-
     param_samples = np.linspace(bounds[0], bounds[1], samples)
-
     init_fin, init_nonfin, init_SWB = init_ind_params(new_constants)
 
+    # Initialise data
     data = np.empty((samples, runs, len(int_ts), 2))
+
     for sample_index, sample in enumerate(param_samples):
         print(f"---{param}---{sample_index}---{int_var}---")
         new_constants[param] = sample
         for run in range(runs):
+            # Run the model and extract data
             output = run_exec(new_constants, its, init_SWB, init_fin, init_nonfin)
             SWB = extract_data(output, 1)
+
+            # Calculate equilibrium SWB and lower CI bound
             mean_SWBs = np.mean(SWB, axis=1)
             equilibrium_SWB = np.mean(SWB[burn_in_period-20:burn_in_period])
             equilibrium_low_bound = equilibrium_SWB - np.std(mean_SWBs[:burn_in_period])
             int_ts = np.array(int_ts)
+
+            # Calculate resilience impacts
             for ts_index, ts in enumerate(int_ts):
+
+                # Measure change in SWB after intervention
                 data[sample_index, run, ts_index, 0] = mean_SWBs[ts] - mean_SWBs[ts-1]
-                for i in range(1, 60):
+
+                # Ensure enough time between the last intervention and the end of the simulation
+                for i in range(1, 50):
+                    # Measure timesteps needed to habituate back to equilibrium
                     if mean_SWBs[ts-1+i] >= equilibrium_low_bound:
                         data[sample_index, run, ts_index, 1] = i
                         break
 
+    # Save data
     np.save(f"data/resilience_{param}{title_add}", data)
 
 def run_degree_SWB(constants, runs, its, title_add=""):
@@ -307,15 +338,17 @@ def run_degree_SWB(constants, runs, its, title_add=""):
     Returns:
     None
     """
+    # Set constants
     network_type = constants["type"]
     init_fin, init_nonfin, init_SWB = init_ind_params(constants)
     degree_SWB_combo_list = []
+
     for _ in range(runs):
         # Execute the simulation
         output = run_exec(constants, its, init_SWB, init_fin, init_nonfin)
 
         # Extract degrees and SWB data from the simulation output
-        degrees = extract_data(output, 18)[constants["burn_in_period"]:].flatten().reshape(-1, 1)
+        degrees = extract_data(output, 17)[constants["burn_in_period"]:].flatten().reshape(-1, 1)
         SWB = extract_data(output, 1)[constants["burn_in_period"]:].flatten().reshape(-1, 1)
 
         # Combine degrees and SWB data into a single array

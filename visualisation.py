@@ -6,31 +6,6 @@ import pandas as pd
 from functions import extract_data
 from initialise import init_states
 
-def visualise(model, output):
-    """
-    Configure and visualize the model using the specified output.
-
-    Parameters:
-    - model: The model object to be visualized.
-    - output: The output data from the model.
-
-    This function sets up the visualization configuration and then generates an animation.
-    """
-    visualization_config = {
-        'layout': 'fr',
-        'plot_interval': 5,
-        'plot_variable': 'SWB',
-        'variable_limits': {
-            'SWB': [0, 10],
-        },
-        'color_scale': 'RdBu',
-        'show_plot': True,
-        'plot_output': 'animations/SWB.gif',
-        'plot_title': 'SWB',
-    }
-
-    model.configure_visualization(visualization_config, output)
-    model.visualize('animation')
 
 def plot_stoch_param(data, param_name, param_steps, intervention_timesteps, int_var, title_add=""):
     """
@@ -185,7 +160,7 @@ def plot_agent(mean_data, std_data, title_add=""):
     plt.close()
     return
     
-def SWB_gif(model, output, iterations, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
+def SWB_gif(model, output, iterations, fps, name="test", xlabel="", ylabel=""):
     """
     Create a GIF of SWB over iterations.
 
@@ -197,15 +172,13 @@ def SWB_gif(model, output, iterations, fps, name="test", xlabel="", ylabel="", x
     - name: The name of the GIF file.
     - xlabel: Label for the x-axis.
     - ylabel: Label for the y-axis.
-    - xlim: Limits for the x-axis.
-    - ylim: Limits for the y-axis.
 
     This function extracts data and generates a GIF showing SWB over time.
     """
     data = extract_data(output, 1)
-    gif(data, iterations, fps, name=name, xlabel=xlabel, ylabel=ylabel, xlim=xlim)
+    gif(data, iterations, fps, name=name, xlabel=xlabel, ylabel=ylabel)
 
-def gif(data, frames, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim=[0, 10]):
+def gif(data, frames, fps, name="test", xlabel="", ylabel=""):
     """
     Create a GIF from data.
 
@@ -216,8 +189,6 @@ def gif(data, frames, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim
     - name: The name of the GIF file.
     - xlabel: Label for the x-axis.
     - ylabel: Label for the y-axis.
-    - xlim: Limits for the x-axis.
-    - ylim: Limits for the y-axis.
 
     This function generates and saves a GIF animation.
     """
@@ -226,10 +197,10 @@ def gif(data, frames, fps, name="test", xlabel="", ylabel="", xlim=[0, 10], ylim
     fig = plt.figure()
     hist = plt.hist(data[1])
     writergif = animation.PillowWriter(fps=fps)
-    anim = animation.FuncAnimation(fig, update_hist, frames, fargs=(data, xlabel, ylabel, xlim) )
+    anim = animation.FuncAnimation(fig, update_hist, frames, fargs=(data, xlabel, ylabel) )
     anim.save(f'animations/{name}.gif',writer=writergif)
 
-def update_hist(num, data, xlabel, ylabel, xlim):
+def update_hist(num, data, xlabel, ylabel):
     """
     Update histogram for each frame in the GIF.
 
@@ -238,14 +209,12 @@ def update_hist(num, data, xlabel, ylabel, xlim):
     - data: The data to visualize.
     - xlabel: Label for the x-axis.
     - ylabel: Label for the y-axis.
-    - xlim: Limits for the x-axis.
 
     This function updates the histogram for the animation.
     """
     plt.cla()
-    plt.hist(data[num], range=xlim)
+    plt.hist(data[num])
     plt.title(f"Iteration: {num}")
-    # plt.xlim(xlim)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 

@@ -33,7 +33,7 @@ def run_model(mp_index, param_values, constants, problem, its, inits, output_que
     if output_type == "GSA":
         data = np.empty(len(param_values))
     elif output_type == "All":
-        data = np.empty((len(param_values), np.shape(param_values)[1]+(19+2)*2+5))
+        data = np.empty((len(param_values), np.shape(param_values)[1]+(18+2)*2+5))
     init_fin, init_nonfin, init_SWB = inits
     for index, params in enumerate(param_values):
         if index % 100 == 0:
@@ -49,7 +49,7 @@ def run_model(mp_index, param_values, constants, problem, its, inits, output_que
         output = run_exec(new_constants, its, init_fin, init_nonfin, init_SWB, verbose=False)
 
         if output_type == "GSA":
-            SWB = extract_data( output, 1)
+            SWB = extract_data(output, 1)
             data[index] = np.mean(SWB[:-50])
         elif output_type == "All":
             output_data = get_all_data(output, new_constants)
@@ -118,8 +118,7 @@ def param_space_behaviour(constants, its, samples, parameters=[], bounds=[[]]):
     data = np.vstack(results)
 
     # Set columns names
-    columns = parameters + ["Mean SWB norm", "Var SWB norm", "Mean SWB", "Var SWB", "Mean SWB exp", "Var SWB exp", 
-                            "Mean SWB community", "Var SWB_community", "Mean habituation",
+    columns = parameters + ["Mean SWB norm", "Var SWB norm", "Mean SWB", "Var SWB", "Mean SWB exp", "Var SWB exp", "Mean habituation",
                             "Var habituation", "Mean sensitisation", "Var sensitisation", "Mean desensitisation", "Var desensitisation",
                             "Mean social w", "Var social w", "Mean financial", "Var financial", "Mean financial exp", "Var financial exp", 
                             "Mean non-financial", "Var non-financial", "Mean non-financial exp", "Var non-financial exp", 
@@ -132,5 +131,5 @@ def param_space_behaviour(constants, its, samples, parameters=[], bounds=[[]]):
 
     # Perform analysis
     df = pd.DataFrame(data, columns=columns)
-    df.to_csv("data/param_space_behaviour_results_server.csv")
+    df.to_csv("data/param_space_behaviour_results_test.csv")
     return

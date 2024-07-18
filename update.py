@@ -183,7 +183,7 @@ def update_states(model):
 
     # TODO remove community SWB
     # Calculate and save community SWB
-    param_chgs["SWB_comm"] = 1
+    # param_chgs["SWB_comm"] = 1
 
     # Save degrees
     param_chgs["degrees"] = np.sum(model.get_adjacency(), axis=1)

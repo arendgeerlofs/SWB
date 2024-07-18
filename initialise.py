@@ -252,18 +252,18 @@ def initial_SWB_hist(model):
     SWB = model.get_state("SWB")
     return SWB.reshape(model.constants["N"], 1).repeat(model.constants["hist_len"], axis=1)
 
-def initial_SWB_comm(model):
-    """
-    Initialise SWB communication values to a constant value of 7.
+# def initial_SWB_comm(model):
+#     """
+#     Initialise SWB communication values to a constant value of 7.
     
-    Parameters:
-    - model: The model object containing the current state and constants.
+#     Parameters:
+#     - model: The model object containing the current state and constants.
     
-    Returns:
-    - An array of SWB communication values for each node.
-    """
-    # return np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
-    return np.full(model.constants["N"], 7)
+#     Returns:
+#     - An array of SWB communication values for each node.
+#     """
+#     # return np.random.uniform(constants["L_low"], constants["L_high"], constants['N'])
+#     return np.full(model.constants["N"], 7)
 
 def initial_sens(model):
     """
@@ -330,7 +330,7 @@ init_states = {
     "SWB_norm" : initial_SWB_norm,
     'SWB': initial_SWB,
     'SWB_exp': initial_expected_SWB,
-    "SWB_comm" : initial_SWB_comm,
+    # "SWB_comm" : initial_SWB_comm,
 
     # Adaptation properties
     'habituation': initial_hab,
